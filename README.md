@@ -8,7 +8,8 @@ Designed to be run incrementally throughout the pre-release cycle so the release
 
 - Python 3.10+
 - [GitHub CLI (`gh`)](https://cli.github.com/) installed and authenticated (`gh auth login`)
-- A local clone of the O3DE repository (read-only reference)
+- Local clone(s) of O3DE repositories (read-only reference)
+- (Optional) [Claude CLI](https://claude.ai/claude-code) for automated narrative summary generation
 
 ## Quick Start
 
@@ -17,7 +18,7 @@ Designed to be run incrementally throughout the pre-release cycle so the release
 python release_notes.py generate \
   --from-ref 2510.0 \
   --to-ref development \
-  --repo-path /path/to/o3de \
+  --default-repo-path /path/to/o3de \
   --output-json release_data.json \
   --output-md 26050_release_notes.md \
   --release-version 26.05.0
@@ -29,11 +30,12 @@ python release_notes.py generate \
 o3de_release_notes_generator/
 ├── README.md                       # This file
 ├── ARCHITECTURE.md                 # Architecture, security model, data flow
+├── CHANGELOG.md                    # Version history (Keep a Changelog format)
 ├── release_notes.py                # Main script (zero external dependencies)
 ├── generate_sbom.py                # CycloneDX 1.5 SBOM generator
 ├── sbom.cdx.json                   # Generated SBOM (auto-updated via CI)
 ├── tests/
-│   └── test_release_notes.py       # 87 unit tests
+│   └── test_release_notes.py       # 105 unit tests
 ├── .github/
 │   └── workflows/
 │       └── sbom.yml                # Auto-regenerates SBOM on push
@@ -53,9 +55,10 @@ The tool has three subcommands: `fetch`, `render`, and `generate`.
 python release_notes.py fetch \
   --from-ref <start-tag> \
   --to-ref <end-branch> \
-  --repo-path <path-to-local-clone> \
+  --default-repo-path <path-to-local-clone> \
   --output-json <output.json> \
   [--repos owner/repo ...] \
+  [--repo-path owner/repo=/path ...] \
   [-v]
 ```
 
@@ -63,7 +66,8 @@ python release_notes.py fetch \
 |------|----------|---------|-------------|
 | `--from-ref` | Yes | - | Starting git reference (tag or commit) |
 | `--to-ref` | Yes | - | Ending git reference (branch or tag) |
-| `--repo-path` | No | `.` | Path to local O3DE git clone (read-only) |
+| `--default-repo-path` | No | `.` | Default local clone path for repos without explicit mapping |
+| `--repo-path` | No | - | Per-repo clone paths as `owner/repo=/path/to/clone` (repeatable) |
 | `--output-json` | Yes | - | Output JSON file path |
 | `--repos` | No | `o3de/o3de` | GitHub repos in `owner/repo` format (where PRs live) |
 | `-v` | No | - | Verbose logging |
@@ -75,7 +79,9 @@ python release_notes.py render \
   --input-json <input.json> \
   --output-md <output.md> \
   --release-version <version-string> \
-  [--include-uncategorized]
+  [--include-uncategorized] \
+  [--generate-summary] \
+  [--summary-cmd <command>]
 ```
 
 | Flag | Required | Default | Description |
@@ -83,7 +89,9 @@ python release_notes.py render \
 | `--input-json` | Yes | - | Path to JSON from `fetch` |
 | `--output-md` | Yes | - | Output markdown file path |
 | `--release-version` | Yes | - | Release version string (e.g., `26.05.0`) |
-| `--include-uncategorized` | No | - | Show PRs that couldn't be categorized |
+| `--include-uncategorized` | No | off | Show PRs that couldn't be categorized |
+| `--generate-summary` | No | off | Generate a narrative summary using an LLM |
+| `--summary-cmd` | No | `claude --print` | Command to generate the summary |
 
 ### `generate` - Fetch and render in one step
 
@@ -97,7 +105,7 @@ Combines `fetch` and `render`. Accepts all flags from both subcommands.
 python release_notes.py generate \
   --from-ref 2510.0 \
   --to-ref development \
-  --repo-path ~/PROJECTS/o3de \
+  --default-repo-path ~/PROJECTS/o3de \
   --output-json release_data.json \
   --output-md 26050_release_notes.md \
   --release-version 26.05.0
@@ -110,36 +118,59 @@ Re-run the same command. New PRs are fetched; existing data and any manual edits
 ```bash
 # Week 1
 python release_notes.py generate --from-ref 2510.0 --to-ref development \
-  --repo-path ~/PROJECTS/o3de --output-json release_data.json \
+  --default-repo-path ~/PROJECTS/o3de --output-json release_data.json \
   --output-md notes.md --release-version 26.05.0
 
 # Week 2 (same command - only fetches new PRs)
 python release_notes.py generate --from-ref 2510.0 --to-ref development \
-  --repo-path ~/PROJECTS/o3de --output-json release_data.json \
+  --default-repo-path ~/PROJECTS/o3de --output-json release_data.json \
   --output-md notes.md --release-version 26.05.0
 ```
+
+### Multi-repo with separate local clones
+
+```bash
+python release_notes.py generate \
+  --from-ref 2510.0 --to-ref development \
+  --repos o3de/o3de o3de/o3de-extras \
+  --default-repo-path ~/PROJECTS/o3de \
+  --repo-path o3de/o3de-extras=~/PROJECTS/o3de-extras \
+  --output-json release_data.json \
+  --output-md notes.md \
+  --release-version 26.05.0
+```
+
+Each repo runs `git log` against its own local clone. The `--default-repo-path` is used for any repo without an explicit `--repo-path` mapping.
+
+### Generate with automated narrative summary
+
+```bash
+python release_notes.py generate \
+  --from-ref 2510.0 --to-ref development \
+  --default-repo-path ~/PROJECTS/o3de \
+  --output-json release_data.json \
+  --output-md notes.md \
+  --release-version 26.05.0 \
+  --generate-summary
+```
+
+This builds a structured prompt from the categorized PR data and pipes it to the summary command (default: `claude --print`). The generated narrative replaces the placeholder intro in the markdown output.
+
+To use a different LLM command:
+
+```bash
+  --generate-summary --summary-cmd "my-llm-tool --flag"
+```
+
+The command must accept `-p <prompt>` and write its response to stdout.
 
 ### Fetch only (for AI agent consumption)
 
 ```bash
 python release_notes.py fetch \
   --from-ref 2510.0 --to-ref development \
-  --repo-path ~/PROJECTS/o3de \
+  --default-repo-path ~/PROJECTS/o3de \
   --output-json release_data.json
-```
-
-The JSON output is structured for programmatic consumption. See [JSON Schema](#json-schema) below.
-
-### Multi-repo (include o3de-extras)
-
-```bash
-python release_notes.py generate \
-  --from-ref 2510.0 --to-ref development \
-  --repos o3de/o3de o3de/o3de-extras \
-  --repo-path ~/PROJECTS/o3de \
-  --output-json release_data.json \
-  --output-md notes.md \
-  --release-version 26.05.0
 ```
 
 ### Include uncategorized PRs for triage
@@ -147,7 +178,7 @@ python release_notes.py generate \
 ```bash
 python release_notes.py generate \
   --from-ref 2510.0 --to-ref development \
-  --repo-path ~/PROJECTS/o3de \
+  --default-repo-path ~/PROJECTS/o3de \
   --output-json release_data.json \
   --output-md notes.md \
   --release-version 26.05.0 \
@@ -164,8 +195,12 @@ The intermediate JSON is the primary data format. It can be edited by humans or 
     "generated_at": "2026-04-21T10:00:00+00:00",
     "from_ref": "2510.0",
     "to_ref": "development",
-    "repos": ["o3de/o3de"],
-    "schema_version": 1,
+    "repos": ["o3de/o3de", "o3de/o3de-extras"],
+    "repo_paths": {
+      "o3de/o3de": "/home/user/PROJECTS/o3de",
+      "o3de/o3de-extras": "/home/user/PROJECTS/o3de-extras"
+    },
+    "schema_version": 2,
     "pr_count": 228,
     "categorization_summary": {
       "label": 152,
@@ -219,6 +254,22 @@ If none match, the PR is marked `uncategorized` for manual triage.
 
 The keyword maps (`SIG_TITLE_KEYWORDS`) and file path maps (`SIG_FILE_PATH_PATTERNS`) are data-driven dicts at the top of `release_notes.py`. To add or adjust mappings, edit these dicts directly.
 
+## Narrative Summary Generation
+
+When `--generate-summary` is enabled, the tool builds a structured prompt from the categorized PR data and sends it to a configurable LLM command.
+
+**How it works:**
+1. PRs are grouped by SIG with up to 15 titles per group (truncated for large sections)
+2. Cherry-picks and uncategorized PRs are excluded from the prompt
+3. The prompt asks for a 2-3 paragraph narrative in the style of previous O3DE release notes
+4. The LLM's output replaces the `<!-- TODO -->` placeholder in the rendered markdown
+
+**Default command:** `claude --print` (Claude Code CLI). Override with `--summary-cmd`.
+
+**Requirements for custom commands:** Must accept `-p <prompt>` as arguments and write the response to stdout.
+
+**When disabled (default):** A placeholder intro and `<!-- TODO -->` comment are inserted for manual writing.
+
 ## SBOM (Software Bill of Materials)
 
 A CycloneDX 1.5 SBOM is maintained at `sbom.cdx.json`. It is automatically regenerated by a GitHub Action on every push to `main` that changes Python source files.
@@ -241,7 +292,7 @@ The SBOM captures:
 python -m pytest tests/ -v
 ```
 
-87 unit tests covering input validation, SIG categorization, markdown rendering, incremental merging, atomic I/O, and security controls.
+105 unit tests covering input validation, multi-repo path parsing, SIG categorization, summary prompt building, summary generation, markdown rendering, incremental merging, atomic I/O, and security controls.
 
 ## Security
 
@@ -254,6 +305,7 @@ Key highlights:
 - GitHub auth delegated to `gh` CLI (no tokens in code or logs)
 - Atomic file writes prevent data corruption
 - PR titles sanitized to prevent markdown injection
+- CycloneDX SBOM with source file hashes for supply chain transparency
 
 ## License
 

@@ -14,9 +14,9 @@ Both scripts use only Python stdlib modules and interact with external systems (
                     │                     release_notes.py                        │
                     │                                                              │
                     │   ┌───────────┐     ┌──────────────┐     ┌──────────────┐   │
- Local git clone ──▶│   │  Extract  │────▶│  Categorize  │────▶│   Render     │   │
-   (read-only)      │   │           │     │              │     │              │   │
-                    │   │ git log   │     │ 1. Labels    │     │ Markdown     │   │
+ Local git clones ─▶│   │  Extract  │────▶│  Categorize  │────▶│   Render     │   │
+   (read-only,      │   │           │     │              │     │              │   │
+    per-repo)       │   │ git log   │     │ 1. Labels    │     │ Markdown     │   │
                     │   │ PR #s     │     │ 2. Title     │     │ by SIG       │   │
                     │   │           │     │ 3. Files     │     │              │   │
                     │   └─────┬─────┘     └──────┬───────┘     └──────┬───────┘   │
@@ -24,8 +24,9 @@ Both scripts use only Python stdlib modules and interact with external systems (
                     │         ▼                  ▼                    ▼           │
                     │   ┌───────────┐     ┌──────────────┐     ┌──────────────┐   │
                     │   │  gh CLI   │     │ JSON cache   │     │  .md output  │   │
-                    │   │  GraphQL  │     │ (editable)   │     │              │   │
-                    │   └───────────┘     └──────────────┘     └──────────────┘   │
+                    │   │  GraphQL  │     │ (editable)   │     │ + optional   │   │
+                    │   └───────────┘     └──────────────┘     │ LLM summary │   │
+                    │                                          └──────────────┘   │
                     └──────────────────────────────────────────────────────────────┘
                           │                     ▲                      │
                           ▼                     │                      ▼
@@ -39,12 +40,16 @@ Both scripts use only Python stdlib modules and interact with external systems (
 
 ### `release_notes.py`
 
-The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 770 lines.
+The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 870 lines.
 
 **Key data structures:**
 - `SIG_TITLE_KEYWORDS` - Dict mapping SIG names to title keyword lists for heuristic categorization.
 - `SIG_FILE_PATH_PATTERNS` - Dict mapping SIG names to file path prefixes for heuristic categorization.
 - `SIG_CANONICAL_ORDER` - List defining the fixed section ordering in rendered markdown.
+
+**Multi-repo support:** The `parse_repo_path_mappings()` function resolves per-repo local clone paths. Each repo can have its own clone via `--repo-path owner/repo=/path`, with `--default-repo-path` as the fallback.
+
+**Summary generation:** The `generate_summary()` function builds a structured prompt from categorized PR data and pipes it to a configurable LLM command via subprocess (list args, no `shell=True`). Enabled via `--generate-summary`; disabled by default.
 
 ### `generate_sbom.py`
 
@@ -52,7 +57,7 @@ Generates a CycloneDX 1.5 JSON SBOM (`sbom.cdx.json`). Captures project metadata
 
 ### `tests/test_release_notes.py`
 
-87 unit tests using `pytest` and `unittest.mock`. Covers input validation (including injection attempts), SIG categorization (labels, title heuristics, file heuristics, priority ordering), markdown rendering, incremental merging with manual override preservation, atomic file I/O, and JSON loading/validation.
+105 unit tests using `pytest` and `unittest.mock`. Covers input validation (including injection attempts), multi-repo path parsing, SIG categorization (labels, title heuristics, file heuristics, priority ordering), summary prompt building, summary generation (success, failure, timeout), markdown rendering (with and without summary), incremental merging with manual override preservation, atomic file I/O, and JSON loading/validation.
 
 ### `.github/workflows/sbom.yml`
 
@@ -62,24 +67,25 @@ GitHub Action that regenerates `sbom.cdx.json` on every push to `main` that chan
 
 ### Stage 1: Extract
 
-**Input:** Local git repository (read-only), two git references (tag/branch).
+**Input:** Local git repositories (read-only, one per repo), two git references (tag/branch).
 
 **Process:**
-1. Runs `git log --format=%s <from>..<to> --no-merges` via `subprocess.run()` with list arguments.
-2. Parses PR numbers from commit subjects using regex `\(#(\d+)\)`.
-3. Deduplicates and sorts.
+1. Resolves per-repo local clone paths via `parse_repo_path_mappings()`.
+2. For each repo, runs `git log --format=%s <from>..<to> --no-merges` via `subprocess.run()` with list arguments against that repo's local clone.
+3. Parses PR numbers from commit subjects using regex `\(#(\d+)\)`.
+4. Deduplicates and sorts per repo.
 
-**Output:** Sorted list of PR numbers.
+**Output:** Sorted list of PR numbers per repo.
 
-**Trust boundary:** The git log output is from a local repository the user controls. PR numbers are parsed as integers, preventing injection.
+**Trust boundary:** The git log output is from local repositories the user controls. PR numbers are parsed as integers, preventing injection. Repo path mappings are validated for format before use.
 
 ### Stage 2: Fetch + Categorize
 
-**Input:** PR numbers, GitHub repo slug(s).
+**Input:** PR numbers per repo, GitHub repo slug(s).
 
 **Process:**
-1. Constructs GraphQL queries batching up to 30 PRs per request (~8 requests for a typical release of ~230 PRs).
-2. Executes via `gh api graphql` (subprocess with list args).
+1. For each repo, constructs GraphQL queries batching up to 30 PRs per request (~8 requests for a typical release of ~230 PRs).
+2. Executes via `gh api graphql` (subprocess with list args). Each repo's PRs are fetched from the correct GitHub owner/repo.
 3. For each PR, categorizes by SIG using three methods in priority order:
    - **Label match:** Checks for `sig/*` GitHub labels. Highest confidence.
    - **Title heuristic:** Matches title keywords against per-SIG keyword maps.
@@ -93,17 +99,19 @@ GitHub Action that regenerates `sbom.cdx.json` on every push to `main` that chan
 
 ### Stage 3: Render
 
-**Input:** JSON data from Stage 2, version string.
+**Input:** JSON data from Stage 2, version string, optional summary generation config.
 
 **Process:**
-1. Groups PRs by SIG category.
-2. Filters out cherry-picks and stabilization sync PRs.
-3. Renders markdown with fixed SIG ordering matching the established O3DE release notes format.
-4. Sanitizes PR titles for markdown (escapes special characters).
+1. If `--generate-summary` is enabled, builds a structured prompt from the PR data and pipes it to the configured LLM command (default: `claude --print`) via subprocess with list args.
+2. Groups PRs by SIG category.
+3. Filters out cherry-picks and stabilization sync PRs.
+4. Renders markdown with fixed SIG ordering matching the established O3DE release notes format.
+5. Inserts the LLM-generated narrative summary (or a placeholder if summary generation is disabled or fails).
+6. Sanitizes PR titles for markdown (escapes special characters).
 
 **Output:** Markdown file.
 
-**Trust boundary:** Output is written atomically to prevent corruption. PR titles are sanitized to prevent markdown injection.
+**Trust boundary:** Output is written atomically to prevent corruption. PR titles are sanitized to prevent markdown injection. The summary command is executed via subprocess with list args (no `shell=True`). The LLM's output is inserted as-is into the markdown intro section — it is not interpolated into shell commands or other untrusted contexts.
 
 ## Incremental Update Flow
 
@@ -112,7 +120,7 @@ The tool supports re-running throughout the pre-release cycle. On subsequent run
 ```
 First run:                    Subsequent runs:
 
-git log ──▶ PR #s             git log ──▶ PR #s (may have grown)
+git log (per repo) ──▶ PR #s  git log (per repo) ──▶ PR #s (may have grown)
     │                             │
     ▼                             ▼
 GitHub API ──▶ all PRs        GitHub API ──▶ new PRs only
@@ -123,6 +131,9 @@ categorize ──▶ JSON           merge with existing JSON
     ▼                             │
 write JSON                        ▼
     │                         write updated JSON
+    ▼                             │
+(optional) LLM summary            ▼
+    │                         (optional) LLM summary
     ▼                             │
 render .md                        ▼
                               render updated .md
@@ -156,6 +167,8 @@ The `generate_sbom.py` script produces a CycloneDX 1.5 JSON SBOM at `sbom.cdx.js
 | Output file paths | Path traversal | Resolved via `pathlib.Path.resolve()`; optional base-dir containment check |
 | JSON data files | Corruption from interrupted writes | Atomic writes via `tempfile` + `os.replace()` |
 | GitHub API responses | Malformed data | Validated structure before use; missing fields default safely |
+| LLM summary command | Command injection via `--summary-cmd` | Command split by whitespace, executed via subprocess with list args; executable checked via `shutil.which()` before invocation |
+| LLM output | Prompt injection in generated narrative | Output is inserted into markdown intro only; not used in shell commands, file paths, or API calls |
 | Supply chain | Undetected dependency changes | CycloneDX SBOM with source file hashes; auto-updated via CI |
 
 ### OWASP Top 10 Mapping
@@ -187,9 +200,11 @@ The `generate_sbom.py` script produces a CycloneDX 1.5 JSON SBOM at `sbom.cdx.js
 |-------|---------|------------|-------------------|
 | Git ref | `^[a-zA-Z0-9._/-]+$` | 256 | Must not start with `-` |
 | Repo slug | `^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$` | 128 | Exactly one `/` |
+| Repo path mapping | `^(owner/repo)=(.+)$` | N/A | Repo slug validated separately; path resolved via `pathlib`; `.git` existence checked |
 | Output path | N/A (uses pathlib) | OS limit | Parent must exist; optional base-dir containment |
 | PR number | Parsed as `int()` | N/A | Must be positive integer (implicit) |
 | Version string | Free text (user-facing) | N/A | Used only in markdown heading |
+| Summary command | Split by whitespace | N/A | Executable checked via `shutil.which()` before invocation |
 
 ### Subprocess Execution
 
@@ -199,6 +214,7 @@ Every subprocess call uses list arguments:
 subprocess.run(['git', 'log', '--format=%s', f'{from_ref}..{to_ref}'], ...)
 subprocess.run(['gh', 'api', 'graphql', '-f', f'query={query}'], ...)
 subprocess.run(['gh', 'auth', 'status'], ...)
+subprocess.run([*cmd_parts, '-p', prompt], ...)  # summary generation
 ```
 
-No call uses `shell=True`. The `from_ref` and `to_ref` values are validated before interpolation into the argument list, preventing argument injection (e.g., a ref like `--exec=malicious` is rejected by the leading-hyphen check).
+No call uses `shell=True`. The `from_ref` and `to_ref` values are validated before interpolation into the argument list, preventing argument injection (e.g., a ref like `--exec=malicious` is rejected by the leading-hyphen check). The summary command is split by whitespace and the executable is verified via `shutil.which()` before invocation.
