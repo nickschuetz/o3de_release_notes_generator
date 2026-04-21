@@ -17,12 +17,13 @@ from datetime import datetime, timezone
 LOG_FORMAT = '[%(levelname)s] %(name)s: %(message)s'
 logger = logging.getLogger('o3de.release_notes')
 
-__version__ = '0.1.0-beta'
+__version__ = '0.2.0-beta'
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 GIT_REF_PATTERN = re.compile(r'^[a-zA-Z0-9._/\-]+$')
 REPO_SLUG_PATTERN = re.compile(r'^[a-zA-Z0-9_.\-]+/[a-zA-Z0-9_.\-]+$')
+REPO_PATH_MAPPING_PATTERN = re.compile(r'^([a-zA-Z0-9_.\-]+/[a-zA-Z0-9_.\-]+)=(.+)$')
 PR_NUMBER_PATTERN = re.compile(r'\(#(\d+)\)')
 
 DEFAULT_REPOS = ['o3de/o3de']
@@ -200,6 +201,34 @@ def validate_output_path(path: pathlib.Path, base_dir: pathlib.Path | None = Non
     if not resolved.parent.exists():
         raise ValueError(f'Parent directory does not exist: {resolved.parent}')
     return resolved
+
+
+def parse_repo_path_mappings(
+    repo_paths: list[str] | None,
+    default_path: str,
+    repos: list[str],
+) -> dict[str, pathlib.Path]:
+    default = pathlib.Path(default_path).resolve()
+    mappings: dict[str, pathlib.Path] = {}
+
+    if repo_paths:
+        for entry in repo_paths:
+            match = REPO_PATH_MAPPING_PATTERN.match(entry)
+            if match:
+                slug, path_str = match.group(1), match.group(2)
+                validate_repo_slug(slug)
+                mappings[slug] = pathlib.Path(path_str).resolve()
+            else:
+                raise ValueError(
+                    f'Invalid --repo-path mapping: {entry!r}. '
+                    f'Use owner/repo=/path/to/clone format.'
+                )
+
+    for repo in repos:
+        if repo not in mappings:
+            mappings[repo] = default
+
+    return mappings
 
 
 def extract_pr_numbers_from_git_log(
@@ -482,10 +511,91 @@ def merge_with_existing(
     return merged
 
 
+def _build_summary_prompt(pr_list: list[dict], version: str) -> str:
+    by_sig: dict[str, list[str]] = {}
+    for pr in pr_list:
+        flags = pr.get('flags', [])
+        if 'cherry-pick' in flags or 'stabilization-sync' in flags:
+            continue
+        sig = pr.get('sig_category', 'uncategorized')
+        if sig == 'uncategorized':
+            continue
+        display = SIG_DISPLAY_NAMES.get(sig, sig)
+        by_sig.setdefault(display, []).append(pr.get('title', ''))
+
+    sig_summary = ''
+    for sig in sorted(by_sig):
+        titles = by_sig[sig]
+        sig_summary += f'\n{sig} ({len(titles)} changes):\n'
+        for t in titles[:15]:
+            sig_summary += f'  - {t}\n'
+        if len(titles) > 15:
+            sig_summary += f'  - ... and {len(titles) - 15} more\n'
+
+    total = sum(len(v) for v in by_sig.values())
+
+    return (
+        f'Write a narrative summary for the O3DE (Open 3D Engine) {version} release notes. '
+        f'This release contains {total} changes across {len(by_sig)} SIGs '
+        f'(Special Interest Groups).\n\n'
+        f'The summary should be 2-3 paragraphs that:\n'
+        f'1. Open with a high-level statement about the release\n'
+        f'2. Highlight the most significant new features and improvements\n'
+        f'3. Mention key themes (e.g., platform support, deprecations, new gems)\n'
+        f'4. Thank the community contributors\n\n'
+        f'Write in the style of previous O3DE release notes — professional, '
+        f'concise, and community-oriented. Do not use markdown headers or bullet '
+        f'points. Output only the narrative paragraphs, nothing else.\n\n'
+        f'Here are the changes grouped by SIG:\n{sig_summary}'
+    )
+
+
+def generate_summary(pr_list: list[dict], version: str, summary_cmd: str) -> str | None:
+    prompt = _build_summary_prompt(pr_list, version)
+
+    cmd_parts = summary_cmd.split()
+    executable = cmd_parts[0]
+
+    if not shutil.which(executable):
+        logger.error('Summary command not found: %s', executable)
+        return None
+
+    logger.info('Generating narrative summary using: %s', executable)
+
+    try:
+        result = subprocess.run(
+            [*cmd_parts, '-p', prompt],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        if result.returncode != 0:
+            logger.error('Summary generation failed: %s', result.stderr.strip()[:200])
+            return None
+
+        summary = result.stdout.strip()
+        if not summary:
+            logger.warning('Summary command returned empty output')
+            return None
+
+        return summary
+
+    except subprocess.TimeoutExpired:
+        logger.error('Summary generation timed out after 120s')
+        return None
+    except OSError as e:
+        logger.error('Failed to run summary command: %s', e)
+        return None
+
+
+DEFAULT_SUMMARY_CMD = 'claude --print'
+
+
 def render_markdown(
     pr_list: list[dict],
     version: str,
     include_uncategorized: bool = False,
+    summary: str | None = None,
 ) -> str:
     by_sig: dict[str, list[dict]] = {}
     uncategorized = []
@@ -504,10 +614,15 @@ def render_markdown(
     lines = []
     lines.append(f'# {version} Release Notes')
     lines.append('')
-    lines.append(f'The O3DE {version} release includes bug fixes, performance enhancements, '
-                 f'and new features across the engine.')
-    lines.append('')
-    lines.append('<!-- TODO: Write a narrative summary of the release highlights -->')
+
+    if summary:
+        lines.append(summary)
+    else:
+        lines.append(f'The O3DE {version} release includes bug fixes, performance enhancements, '
+                     f'and new features across the engine.')
+        lines.append('')
+        lines.append('<!-- TODO: Write a narrative summary of the release highlights -->')
+
     lines.append('')
     lines.append('# Full list of changes')
     lines.append('')
@@ -592,7 +707,7 @@ def load_existing_json(path: pathlib.Path) -> dict | None:
             logger.warning('Existing JSON at %s has unexpected structure, ignoring', path)
             return None
         sv = data.get('metadata', {}).get('schema_version', 0)
-        if sv != SCHEMA_VERSION:
+        if sv not in (SCHEMA_VERSION, SCHEMA_VERSION - 1):
             logger.warning('Schema version mismatch (got %d, expected %d), re-fetching', sv, SCHEMA_VERSION)
             return None
         return data
@@ -605,10 +720,20 @@ def _run_fetch(args: argparse.Namespace) -> int:
     if not _check_gh_available():
         return 1
 
-    repo_path = pathlib.Path(args.repo_path).resolve()
-    if not (repo_path / '.git').exists():
-        logger.error('Not a git repository: %s', repo_path)
+    try:
+        repo_path_map = parse_repo_path_mappings(
+            args.repo_path,
+            args.default_repo_path,
+            args.repos,
+        )
+    except ValueError as e:
+        logger.error('%s', e)
         return 1
+
+    for slug, rpath in repo_path_map.items():
+        if not (rpath / '.git').exists():
+            logger.error('Not a git repository: %s (for %s)', rpath, slug)
+            return 1
 
     output_json = validate_output_path(pathlib.Path(args.output_json))
 
@@ -620,10 +745,11 @@ def _run_fetch(args: argparse.Namespace) -> int:
             logger.error('%s', e)
             return 1
 
-        logger.info('Extracting PR numbers from git log for %s (%s..%s)',
-                     repo_slug, args.from_ref, args.to_ref)
+        local_path = repo_path_map[repo_slug]
+        logger.info('Extracting PR numbers from git log for %s (%s..%s) at %s',
+                     repo_slug, args.from_ref, args.to_ref, local_path)
         try:
-            pr_numbers = extract_pr_numbers_from_git_log(repo_path, args.from_ref, args.to_ref)
+            pr_numbers = extract_pr_numbers_from_git_log(local_path, args.from_ref, args.to_ref)
         except (RuntimeError, ValueError) as e:
             logger.error('%s', e)
             return 1
@@ -661,6 +787,7 @@ def _run_fetch(args: argparse.Namespace) -> int:
             'from_ref': args.from_ref,
             'to_ref': args.to_ref,
             'repos': args.repos,
+            'repo_paths': {k: str(v) for k, v in repo_path_map.items()},
             'schema_version': SCHEMA_VERSION,
             'pr_count': len(merged),
             'categorization_summary': cat_counts,
@@ -688,10 +815,20 @@ def _run_render(args: argparse.Namespace) -> int:
         logger.error('Failed to load valid JSON from %s', input_json)
         return 1
 
+    summary = None
+    if getattr(args, 'generate_summary', False):
+        summary_cmd = getattr(args, 'summary_cmd', DEFAULT_SUMMARY_CMD)
+        summary = generate_summary(data['pull_requests'], args.release_version, summary_cmd)
+        if summary:
+            logger.info('Generated narrative summary (%d chars)', len(summary))
+        else:
+            logger.warning('Summary generation failed, using placeholder')
+
     content = render_markdown(
         data['pull_requests'],
         args.release_version,
         include_uncategorized=args.include_uncategorized,
+        summary=summary,
     )
 
     write_markdown_atomic(content, output_md)
@@ -716,41 +853,52 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_fetch_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument('--from-ref', required=True,
+                        help='Starting git reference (tag or commit)')
+    parser.add_argument('--to-ref', required=True,
+                        help='Ending git reference (branch or tag)')
+    parser.add_argument('--repos', nargs='+', default=DEFAULT_REPOS,
+                        help='GitHub repos in owner/repo format (default: o3de/o3de)')
+    parser.add_argument('--repo-path', nargs='*', default=None,
+                        help='Per-repo local clone paths as owner/repo=/path/to/clone')
+    parser.add_argument('--default-repo-path', default='.',
+                        help='Default local clone path for repos without explicit mapping (default: .)')
+    parser.add_argument('--output-json', required=True,
+                        help='Output JSON file path')
+
+
+def _add_render_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument('--input-json', required=True,
+                        help='Input JSON file path')
+    parser.add_argument('--output-md', required=True,
+                        help='Output markdown file path')
+    parser.add_argument('--release-version', required=True, dest='release_version',
+                        help='Release version string (e.g. 26.05.0)')
+    parser.add_argument('--include-uncategorized', action='store_true',
+                        help='Include uncategorized PRs in output')
+    parser.add_argument('--generate-summary', action='store_true', default=False,
+                        help='Generate a narrative summary using an LLM (default: off)')
+    parser.add_argument('--summary-cmd', default=DEFAULT_SUMMARY_CMD,
+                        help=f'Command to generate summary (default: {DEFAULT_SUMMARY_CMD})')
+
+
 def add_parser_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest='subcommand', required=True)
 
     fetch_parser = subparsers.add_parser('fetch', help='Fetch PR data from GitHub into JSON')
-    fetch_parser.add_argument('--from-ref', required=True, help='Starting git reference (tag or commit)')
-    fetch_parser.add_argument('--to-ref', required=True, help='Ending git reference (branch or tag)')
-    fetch_parser.add_argument('--repos', nargs='+', default=DEFAULT_REPOS,
-                              help='GitHub repos in owner/repo format (default: o3de/o3de)')
-    fetch_parser.add_argument('--repo-path', default='.', help='Path to local git clone (default: current directory)')
-    fetch_parser.add_argument('--output-json', required=True, help='Output JSON file path')
+    _add_fetch_args(fetch_parser)
     _add_common_args(fetch_parser)
     fetch_parser.set_defaults(func=_run_fetch)
 
     render_parser = subparsers.add_parser('render', help='Render markdown from JSON')
-    render_parser.add_argument('--input-json', required=True, help='Input JSON file path')
-    render_parser.add_argument('--output-md', required=True, help='Output markdown file path')
-    render_parser.add_argument('--release-version', required=True, dest='release_version',
-                               help='Release version string (e.g. 26.05.0)')
-    render_parser.add_argument('--include-uncategorized', action='store_true',
-                               help='Include uncategorized PRs in output')
+    _add_render_args(render_parser)
     _add_common_args(render_parser)
     render_parser.set_defaults(func=_run_render)
 
     gen_parser = subparsers.add_parser('generate', help='Fetch and render in one step')
-    gen_parser.add_argument('--from-ref', required=True, help='Starting git reference (tag or commit)')
-    gen_parser.add_argument('--to-ref', required=True, help='Ending git reference (branch or tag)')
-    gen_parser.add_argument('--repos', nargs='+', default=DEFAULT_REPOS,
-                            help='GitHub repos in owner/repo format (default: o3de/o3de)')
-    gen_parser.add_argument('--repo-path', default='.', help='Path to local git clone (default: current directory)')
-    gen_parser.add_argument('--output-json', required=True, help='Output JSON file path')
-    gen_parser.add_argument('--output-md', required=True, help='Output markdown file path')
-    gen_parser.add_argument('--release-version', required=True, dest='release_version',
-                            help='Release version string (e.g. 26.05.0)')
-    gen_parser.add_argument('--include-uncategorized', action='store_true',
-                            help='Include uncategorized PRs in output')
+    _add_fetch_args(gen_parser)
+    _add_render_args(gen_parser)
     _add_common_args(gen_parser)
     gen_parser.set_defaults(func=_run_generate)
 

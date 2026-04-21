@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-beta] - 2026-04-21
+
+### Added
+- Multi-repo support: each repo can have its own local clone via `--repo-path owner/repo=/path/to/clone`
+- `--default-repo-path` flag for setting the fallback clone path when no explicit mapping is given
+- Automated narrative summary generation via `--generate-summary` flag (default: off)
+- `--summary-cmd` flag to configure the LLM command (default: `claude --print`)
+- Summary prompt builder that groups PRs by SIG with truncation for large sections
+- 18 new unit tests for multi-repo parsing, summary prompt building, and summary generation
+
+### Changed
+- `--repo-path` now accepts per-repo mappings in `owner/repo=/path` format
+- Schema version bumped to 2 (v1 JSON files are still accepted for backward compatibility)
+- JSON metadata now includes `repo_paths` mapping for traceability
+- Version bumped to 0.2.0-beta
+
+### Removed
+- Single-path `--repo-path` positional behavior replaced by `--default-repo-path`
+
 ## [0.1.0-beta] - 2026-04-21
 
 ### Added
@@ -25,6 +44,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dual licensing (Apache-2.0 OR MIT) matching the O3DE project
 
 ### Known Limitations
-- Multi-repo support (`--repos`) queries the same local git clone for all repos; separate clones for o3de-extras are not yet handled
-- No automated narrative summary generation (placeholder is inserted for manual writing)
 - `--force-recategorize` flag is documented in the plan but not yet implemented

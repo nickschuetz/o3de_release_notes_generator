@@ -4,6 +4,7 @@
 
 import json
 import pathlib
+import subprocess
 import tempfile
 from unittest import mock
 
@@ -479,12 +480,19 @@ class TestAtomicWrite:
 
 class TestLoadExistingJson:
     def test_valid_file(self, tmp_path):
-        data = {'metadata': {'schema_version': 1}, 'pull_requests': []}
+        data = {'metadata': {'schema_version': release_notes.SCHEMA_VERSION}, 'pull_requests': []}
         path = tmp_path / 'data.json'
         path.write_text(json.dumps(data))
         result = release_notes.load_existing_json(path)
         assert result is not None
         assert result['pull_requests'] == []
+
+    def test_previous_schema_version_accepted(self, tmp_path):
+        data = {'metadata': {'schema_version': release_notes.SCHEMA_VERSION - 1}, 'pull_requests': []}
+        path = tmp_path / 'data.json'
+        path.write_text(json.dumps(data))
+        result = release_notes.load_existing_json(path)
+        assert result is not None
 
     def test_missing_file(self, tmp_path):
         result = release_notes.load_existing_json(tmp_path / 'missing.json')
@@ -508,3 +516,142 @@ class TestLoadExistingJson:
         path.write_text('{"metadata": {}}')
         result = release_notes.load_existing_json(path)
         assert result is None
+
+
+class TestParseRepoPathMappings:
+    def test_default_path_for_all_repos(self):
+        result = release_notes.parse_repo_path_mappings(
+            None, '/default', ['o3de/o3de', 'o3de/o3de-extras']
+        )
+        assert result['o3de/o3de'] == pathlib.Path('/default').resolve()
+        assert result['o3de/o3de-extras'] == pathlib.Path('/default').resolve()
+
+    def test_explicit_mapping(self):
+        result = release_notes.parse_repo_path_mappings(
+            ['o3de/o3de-extras=/home/user/extras'],
+            '/default',
+            ['o3de/o3de', 'o3de/o3de-extras'],
+        )
+        assert result['o3de/o3de'] == pathlib.Path('/default').resolve()
+        assert result['o3de/o3de-extras'] == pathlib.Path('/home/user/extras').resolve()
+
+    def test_all_explicit(self):
+        result = release_notes.parse_repo_path_mappings(
+            ['o3de/o3de=/a', 'o3de/o3de-extras=/b'],
+            '/default',
+            ['o3de/o3de', 'o3de/o3de-extras'],
+        )
+        assert result['o3de/o3de'] == pathlib.Path('/a').resolve()
+        assert result['o3de/o3de-extras'] == pathlib.Path('/b').resolve()
+
+    def test_invalid_format_raises(self):
+        with pytest.raises(ValueError, match='Invalid --repo-path mapping'):
+            release_notes.parse_repo_path_mappings(
+                ['not-a-valid-mapping'],
+                '/default',
+                ['o3de/o3de'],
+            )
+
+    def test_empty_repo_paths(self):
+        result = release_notes.parse_repo_path_mappings(
+            [], '/default', ['o3de/o3de']
+        )
+        assert result['o3de/o3de'] == pathlib.Path('/default').resolve()
+
+
+class TestBuildSummaryPrompt:
+    def test_includes_version(self):
+        prs = [{'title': 'Fix bug', 'sig_category': 'sig/build', 'flags': []}]
+        prompt = release_notes._build_summary_prompt(prs, '26.05.0')
+        assert '26.05.0' in prompt
+
+    def test_includes_sig_groups(self):
+        prs = [
+            {'title': 'Fix cmake', 'sig_category': 'sig/build', 'flags': []},
+            {'title': 'Fix vulkan', 'sig_category': 'sig/graphics-audio', 'flags': []},
+        ]
+        prompt = release_notes._build_summary_prompt(prs, '1.0')
+        assert 'SIG-Build' in prompt
+        assert 'SIG-Graphics-Audio' in prompt
+
+    def test_excludes_cherry_picks(self):
+        prs = [
+            {'title': 'Fix cmake', 'sig_category': 'sig/build', 'flags': []},
+            {'title': 'Cherry pick', 'sig_category': 'sig/build', 'flags': ['cherry-pick']},
+        ]
+        prompt = release_notes._build_summary_prompt(prs, '1.0')
+        assert 'Fix cmake' in prompt
+        assert 'Cherry pick' not in prompt
+
+    def test_excludes_uncategorized(self):
+        prs = [
+            {'title': 'Fix cmake', 'sig_category': 'sig/build', 'flags': []},
+            {'title': 'Unknown', 'sig_category': 'uncategorized', 'flags': []},
+        ]
+        prompt = release_notes._build_summary_prompt(prs, '1.0')
+        assert 'Fix cmake' in prompt
+        assert 'Unknown' not in prompt
+
+    def test_truncates_long_sig(self):
+        prs = [{'title': f'PR {i}', 'sig_category': 'sig/build', 'flags': []} for i in range(20)]
+        prompt = release_notes._build_summary_prompt(prs, '1.0')
+        assert '... and 5 more' in prompt
+
+
+class TestGenerateSummary:
+    def test_success(self):
+        with mock.patch('release_notes.shutil.which', return_value='/usr/bin/claude'):
+            with mock.patch('release_notes.subprocess.run') as mock_run:
+                mock_run.return_value = mock.Mock(
+                    returncode=0,
+                    stdout='This release is great.',
+                    stderr='',
+                )
+                result = release_notes.generate_summary([], '1.0', 'claude --print')
+        assert result == 'This release is great.'
+
+    def test_command_not_found(self):
+        with mock.patch('release_notes.shutil.which', return_value=None):
+            result = release_notes.generate_summary([], '1.0', 'nonexistent')
+        assert result is None
+
+    def test_command_failure(self):
+        with mock.patch('release_notes.shutil.which', return_value='/usr/bin/claude'):
+            with mock.patch('release_notes.subprocess.run') as mock_run:
+                mock_run.return_value = mock.Mock(returncode=1, stdout='', stderr='error')
+                result = release_notes.generate_summary([], '1.0', 'claude --print')
+        assert result is None
+
+    def test_timeout(self):
+        with mock.patch('release_notes.shutil.which', return_value='/usr/bin/claude'):
+            with mock.patch('release_notes.subprocess.run', side_effect=subprocess.TimeoutExpired('cmd', 120)):
+                result = release_notes.generate_summary([], '1.0', 'claude --print')
+        assert result is None
+
+    def test_empty_output(self):
+        with mock.patch('release_notes.shutil.which', return_value='/usr/bin/claude'):
+            with mock.patch('release_notes.subprocess.run') as mock_run:
+                mock_run.return_value = mock.Mock(returncode=0, stdout='', stderr='')
+                result = release_notes.generate_summary([], '1.0', 'claude --print')
+        assert result is None
+
+
+class TestRenderMarkdownWithSummary:
+    def _make_pr(self, number, sig, title='Fix something'):
+        return {
+            'number': number, 'repo': 'o3de/o3de', 'title': title,
+            'sig_category': sig, 'categorization_source': 'label',
+            'description': release_notes._sanitize_pr_title_for_markdown(title),
+            'flags': [],
+        }
+
+    def test_with_summary(self):
+        prs = [self._make_pr(1, 'sig/build')]
+        result = release_notes.render_markdown(prs, '1.0', summary='Great release.')
+        assert 'Great release.' in result
+        assert 'TODO' not in result
+
+    def test_without_summary(self):
+        prs = [self._make_pr(1, 'sig/build')]
+        result = release_notes.render_markdown(prs, '1.0')
+        assert 'TODO' in result
