@@ -564,7 +564,8 @@ def generate_summary(pr_list: list[dict], version: str, summary_cmd: str) -> str
 
     try:
         result = subprocess.run(
-            [*cmd_parts, '-p', prompt],
+            cmd_parts,
+            input=prompt,
             capture_output=True,
             text=True,
             timeout=120,
@@ -588,7 +589,7 @@ def generate_summary(pr_list: list[dict], version: str, summary_cmd: str) -> str
         return None
 
 
-DEFAULT_SUMMARY_CMD = 'claude --print'
+DEFAULT_SUMMARY_CMD = 'ollama run qwen2.5:32b'
 
 
 def render_markdown(

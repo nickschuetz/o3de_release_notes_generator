@@ -49,7 +49,7 @@ The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `
 
 **Multi-repo support:** The `parse_repo_path_mappings()` function resolves per-repo local clone paths. Each repo can have its own clone via `--repo-path owner/repo=/path`, with `--default-repo-path` as the fallback.
 
-**Summary generation:** The `generate_summary()` function builds a structured prompt from categorized PR data and pipes it to a configurable LLM command via subprocess (list args, no `shell=True`). Enabled via `--generate-summary`; disabled by default.
+**Summary generation:** The `generate_summary()` function builds a structured prompt from categorized PR data and passes it via stdin to a configurable LLM command (default: `ollama run qwen2.5:32b`) via subprocess (list args, no `shell=True`). Enabled via `--generate-summary`; disabled by default.
 
 ### `generate_sbom.py`
 
@@ -102,7 +102,7 @@ GitHub Action that regenerates `sbom.cdx.json` on every push to `main` that chan
 **Input:** JSON data from Stage 2, version string, optional summary generation config.
 
 **Process:**
-1. If `--generate-summary` is enabled, builds a structured prompt from the PR data and pipes it to the configured LLM command (default: `claude --print`) via subprocess with list args.
+1. If `--generate-summary` is enabled, builds a structured prompt from the PR data and passes it via stdin to the configured LLM command (default: `ollama run qwen2.5:32b`) via subprocess with list args.
 2. Groups PRs by SIG category.
 3. Filters out cherry-picks and stabilization sync PRs.
 4. Renders markdown with fixed SIG ordering matching the established O3DE release notes format.
@@ -214,7 +214,7 @@ Every subprocess call uses list arguments:
 subprocess.run(['git', 'log', '--format=%s', f'{from_ref}..{to_ref}'], ...)
 subprocess.run(['gh', 'api', 'graphql', '-f', f'query={query}'], ...)
 subprocess.run(['gh', 'auth', 'status'], ...)
-subprocess.run([*cmd_parts, '-p', prompt], ...)  # summary generation
+subprocess.run(cmd_parts, input=prompt, ...)  # summary generation via stdin
 ```
 
 No call uses `shell=True`. The `from_ref` and `to_ref` values are validated before interpolation into the argument list, preventing argument injection (e.g., a ref like `--exec=malicious` is rejected by the leading-hyphen check). The summary command is split by whitespace and the executable is verified via `shutil.which()` before invocation.

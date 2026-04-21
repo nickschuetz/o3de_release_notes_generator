@@ -600,14 +600,14 @@ class TestBuildSummaryPrompt:
 
 class TestGenerateSummary:
     def test_success(self):
-        with mock.patch('release_notes.shutil.which', return_value='/usr/bin/claude'):
+        with mock.patch('release_notes.shutil.which', return_value='/usr/local/bin/ollama'):
             with mock.patch('release_notes.subprocess.run') as mock_run:
                 mock_run.return_value = mock.Mock(
                     returncode=0,
                     stdout='This release is great.',
                     stderr='',
                 )
-                result = release_notes.generate_summary([], '1.0', 'claude --print')
+                result = release_notes.generate_summary([], '1.0', 'ollama run qwen2.5:32b')
         assert result == 'This release is great.'
 
     def test_command_not_found(self):
@@ -616,23 +616,23 @@ class TestGenerateSummary:
         assert result is None
 
     def test_command_failure(self):
-        with mock.patch('release_notes.shutil.which', return_value='/usr/bin/claude'):
+        with mock.patch('release_notes.shutil.which', return_value='/usr/local/bin/ollama'):
             with mock.patch('release_notes.subprocess.run') as mock_run:
                 mock_run.return_value = mock.Mock(returncode=1, stdout='', stderr='error')
-                result = release_notes.generate_summary([], '1.0', 'claude --print')
+                result = release_notes.generate_summary([], '1.0', 'ollama run qwen2.5:32b')
         assert result is None
 
     def test_timeout(self):
-        with mock.patch('release_notes.shutil.which', return_value='/usr/bin/claude'):
+        with mock.patch('release_notes.shutil.which', return_value='/usr/local/bin/ollama'):
             with mock.patch('release_notes.subprocess.run', side_effect=subprocess.TimeoutExpired('cmd', 120)):
-                result = release_notes.generate_summary([], '1.0', 'claude --print')
+                result = release_notes.generate_summary([], '1.0', 'ollama run qwen2.5:32b')
         assert result is None
 
     def test_empty_output(self):
-        with mock.patch('release_notes.shutil.which', return_value='/usr/bin/claude'):
+        with mock.patch('release_notes.shutil.which', return_value='/usr/local/bin/ollama'):
             with mock.patch('release_notes.subprocess.run') as mock_run:
                 mock_run.return_value = mock.Mock(returncode=0, stdout='', stderr='')
-                result = release_notes.generate_summary([], '1.0', 'claude --print')
+                result = release_notes.generate_summary([], '1.0', 'ollama run qwen2.5:32b')
         assert result is None
 
 

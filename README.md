@@ -9,7 +9,7 @@ Designed to be run incrementally throughout the pre-release cycle so the release
 - Python 3.10+
 - [GitHub CLI (`gh`)](https://cli.github.com/) installed and authenticated (`gh auth login`)
 - Local clone(s) of O3DE repositories (read-only reference)
-- (Optional) [Claude CLI](https://claude.ai/claude-code) for automated narrative summary generation
+- (Optional) [Ollama](https://ollama.com/) with a local model for automated narrative summary generation
 
 ## Quick Start
 
@@ -91,7 +91,7 @@ python release_notes.py render \
 | `--release-version` | Yes | - | Release version string (e.g., `26.05.0`) |
 | `--include-uncategorized` | No | off | Show PRs that couldn't be categorized |
 | `--generate-summary` | No | off | Generate a narrative summary using an LLM |
-| `--summary-cmd` | No | `claude --print` | Command to generate the summary |
+| `--summary-cmd` | No | `ollama run qwen2.5:32b` | Command to generate the summary |
 
 ### `generate` - Fetch and render in one step
 
@@ -154,15 +154,19 @@ python release_notes.py generate \
   --generate-summary
 ```
 
-This builds a structured prompt from the categorized PR data and pipes it to the summary command (default: `claude --print`). The generated narrative replaces the placeholder intro in the markdown output.
+This builds a structured prompt from the categorized PR data and pipes it via stdin to the summary command (default: `ollama run qwen2.5:32b`). The generated narrative replaces the placeholder intro in the markdown output.
 
-To use a different LLM command:
+To use a different model or tool:
 
 ```bash
-  --generate-summary --summary-cmd "my-llm-tool --flag"
+# Lighter model for machines with less VRAM
+--generate-summary --summary-cmd "ollama run qwen2.5:14b"
+
+# Or any tool that reads a prompt from stdin and writes to stdout
+--generate-summary --summary-cmd "my-llm-tool --flag"
 ```
 
-The command must accept `-p <prompt>` and write its response to stdout.
+The command must read the prompt from **stdin** and write its response to **stdout**.
 
 ### Fetch only (for AI agent consumption)
 
@@ -264,9 +268,14 @@ When `--generate-summary` is enabled, the tool builds a structured prompt from t
 3. The prompt asks for a 2-3 paragraph narrative in the style of previous O3DE release notes
 4. The LLM's output replaces the `<!-- TODO -->` placeholder in the rendered markdown
 
-**Default command:** `claude --print` (Claude Code CLI). Override with `--summary-cmd`.
+**Default command:** `ollama run qwen2.5:32b` ([Ollama](https://ollama.com/) with Qwen 2.5 32B). Override with `--summary-cmd`.
 
-**Requirements for custom commands:** Must accept `-p <prompt>` as arguments and write the response to stdout.
+**Recommended open-source models (via [Ollama](https://ollama.com/)):**
+- `qwen2.5:32b` — best quality, needs ~24GB VRAM (default)
+- `qwen2.5:14b` — good quality, needs ~12GB VRAM
+- `mistral` — lightweight alternative, needs ~6GB VRAM
+
+**Requirements for custom commands:** Must read the prompt from stdin and write the response to stdout.
 
 **When disabled (default):** A placeholder intro and `<!-- TODO -->` comment are inserted for manual writing.
 
