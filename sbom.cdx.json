@@ -1,0 +1,286 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "serialNumber": "urn:uuid:346d3798-75ed-4c04-ad00-9abfb7c93a9c",
+  "metadata": {
+    "timestamp": "2026-04-21T15:16:38.771667+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "generate_sbom.py",
+          "version": "1.0.0",
+          "description": "Built-in SBOM generator for o3de_release_notes_generator"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "name": "o3de_release_notes_generator",
+      "version": "1.0.0",
+      "description": "Generates O3DE release notes from merged pull requests",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/nickschuetz/o3de_release_notes_generator"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:python:minimumVersion",
+          "value": "3.10"
+        },
+        {
+          "name": "cdx:externalDependencies",
+          "value": "none"
+        }
+      ]
+    },
+    "lifecycles": [
+      {
+        "phase": "build"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "argparse",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/argparse@3.14.3",
+      "description": "Python stdlib module: argparse",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "datetime",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/datetime@3.14.3",
+      "description": "Python stdlib module: datetime",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "hashlib",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/hashlib@3.14.3",
+      "description": "Python stdlib module: hashlib",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "json",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/json@3.14.3",
+      "description": "Python stdlib module: json",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "logging",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/logging@3.14.3",
+      "description": "Python stdlib module: logging",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "os",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/os@3.14.3",
+      "description": "Python stdlib module: os",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pathlib",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/pathlib@3.14.3",
+      "description": "Python stdlib module: pathlib",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "platform",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/platform@3.14.3",
+      "description": "Python stdlib module: platform",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "re",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/re@3.14.3",
+      "description": "Python stdlib module: re",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "shutil",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/shutil@3.14.3",
+      "description": "Python stdlib module: shutil",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "subprocess",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/subprocess@3.14.3",
+      "description": "Python stdlib module: subprocess",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sys",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/sys@3.14.3",
+      "description": "Python stdlib module: sys",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tempfile",
+      "version": "3.14.3",
+      "scope": "required",
+      "purl": "pkg:pypi/cpython-stdlib/tempfile@3.14.3",
+      "description": "Python stdlib module: tempfile",
+      "properties": [
+        {
+          "name": "cdx:source",
+          "value": "python-stdlib"
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "name": "release_notes.py",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c5e980ce7c53708fe6a2eef71321be3df130fd1f5a3e5d31810ff84fb9246527"
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "name": "generate_sbom.py",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e1c2720da35258d223291632744e27c854298cc0e3b15c8d6d73c34f6e6eb88e"
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "name": "tests/test_release_notes.py",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3952223cfb4562addc0471c7c20324c9e0909ee4aa8a12911c6104c41b896de6"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "o3de_release_notes_generator",
+      "dependsOn": [
+        "argparse",
+        "datetime",
+        "hashlib",
+        "json",
+        "logging",
+        "os",
+        "pathlib",
+        "platform",
+        "re",
+        "shutil",
+        "subprocess",
+        "sys",
+        "tempfile"
+      ]
+    }
+  ]
+}
