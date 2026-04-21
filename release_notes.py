@@ -112,6 +112,7 @@ SIG_TITLE_KEYWORDS = {
         'physx', 'physics', 'rigid body', 'collider', 'articulation',
         'recast', 'navigation', 'navmesh', 'detour',
         'hinge', 'joint', 'ragdoll', 'character controller',
+        'ros2', 'ros 2', 'robot', 'gripper', 'simulation interface',
     ],
     'sig/security': [
         'security', 'bounds check', 'cve', 'owasp', 'vulnerability',
@@ -153,6 +154,10 @@ SIG_FILE_PATH_PATTERNS = {
     'sig/simulation': [
         'Gems/PhysX/',
         'Gems/RecastNavigation/',
+        'Gems/ROS2/',
+        'Gems/ROS2Sensors/',
+        'Gems/ROS2Controllers/',
+        'Gems/SimulationInterfaces/',
     ],
     'sig/platform': [
         'Code/Framework/AzFramework/Platform/',
@@ -275,6 +280,7 @@ def _build_graphql_query(owner: str, repo: str, pr_numbers: list[int]) -> str:
             f'  pr_{num}: pullRequest(number: {int(num)}) {{\n'
             f'    number\n'
             f'    title\n'
+            f'    body\n'
             f'    mergedAt\n'
             f'    url\n'
             f'    author {{ login }}\n'
@@ -397,6 +403,7 @@ def _normalize_pr_data(raw: dict, repo_slug: str) -> dict:
         'number': raw['number'],
         'repo': repo_slug,
         'title': raw.get('title', ''),
+        'body': raw.get('body', ''),
         'url': raw.get('url', ''),
         'author': raw.get('author', {}).get('login', 'unknown') if raw.get('author') else 'unknown',
         'merged_at': raw.get('mergedAt', ''),
@@ -484,6 +491,76 @@ def _sanitize_pr_title_for_markdown(title: str) -> str:
     if result and not result.endswith('.'):
         result += '.'
     return result
+
+
+PR_BODY_NOISE_PATTERNS = [
+    re.compile(r'^#{1,4}\s*(what|how|why|description|summary|context|test|checklist|todo|link|related|change)', re.IGNORECASE),
+    re.compile(r'^-\s*\[[ x]\]', re.IGNORECASE),
+    re.compile(r'^\s*$'),
+    re.compile(r'^---+$'),
+    re.compile(r'^<!--'),
+    re.compile(r'^!\['),
+    re.compile(r'^https?://'),
+    re.compile(r'^\*\*Full Changelog\*\*'),
+    re.compile(r'^Signed-off-by:', re.IGNORECASE),
+    re.compile(r'^Related\s*(to\s*)?:?\s*$', re.IGNORECASE),
+    re.compile(r'^\*\s*$'),
+    re.compile(r'^-\s*https?://'),
+    re.compile(r'^Automated PR', re.IGNORECASE),
+]
+
+
+DESCRIPTION_REJECT_PATTERNS = [
+    re.compile(r'^(Related\s*(to)?|See also|Fixes|Closes|Resolves)\s*:?\s*[-#h]', re.IGNORECASE),
+    re.compile(r'^\*\s*(Updated|Added|Fixed|Changed|Removed)\s', re.IGNORECASE),
+    re.compile(r'^-\s*https?://'),
+]
+
+
+def _build_pr_description(title: str, body: str) -> str:
+    sanitized_title = _sanitize_pr_title_for_markdown(title)
+    if not body or not body.strip():
+        return sanitized_title
+
+    first_paragraph = _extract_first_paragraph(body)
+    if not first_paragraph:
+        return sanitized_title
+
+    if any(p.match(first_paragraph) for p in DESCRIPTION_REJECT_PATTERNS):
+        return sanitized_title
+
+    if len(first_paragraph) <= 20:
+        return sanitized_title
+
+    if len(first_paragraph) > 300:
+        return sanitized_title
+
+    return _sanitize_pr_title_for_markdown(first_paragraph)
+
+
+def _extract_first_paragraph(body: str) -> str:
+    lines = body.split('\n')
+    paragraph_lines = []
+
+    for line in lines:
+        stripped = line.strip()
+        if any(p.match(stripped) for p in PR_BODY_NOISE_PATTERNS):
+            if paragraph_lines:
+                break
+            continue
+        if not stripped:
+            if paragraph_lines:
+                break
+            continue
+        paragraph_lines.append(stripped)
+
+    if not paragraph_lines:
+        return ''
+
+    paragraph = ' '.join(paragraph_lines)
+    if len(paragraph) > 300:
+        paragraph = paragraph[:297] + '...'
+    return paragraph
 
 
 def _format_pr_reference(repo_slug: str, pr_number: int, url: str = '') -> str:
@@ -588,8 +665,14 @@ def _strip_ansi(text: str) -> str:
 
 
 SUMMARY_PREAMBLE_PATTERNS = [
-    re.compile(r'^(here\'?s?|below is|the following is).*summary.*:?\s*$', re.IGNORECASE),
+    re.compile(r'^(here\'?s?|below is|the following is|there\'?s?).*', re.IGNORECASE),
     re.compile(r'^(sure|certainly|of course)[,!.].*', re.IGNORECASE),
+    re.compile(r'^(i\'ve|i have)\s+(reviewed|read|analyzed|looked|written|created|prepared|updated).*', re.IGNORECASE),
+]
+
+SUMMARY_POSTAMBLE_PATTERNS = [
+    re.compile(r'^(three|two|four|the above|i incorporated|i\'ve incorporated|note:)', re.IGNORECASE),
+    re.compile(r'^(this summary|the summary|these paragraphs|i followed|i used|per your)', re.IGNORECASE),
 ]
 
 
@@ -608,6 +691,17 @@ def _clean_summary(text: str) -> str:
             first = lines[0].strip()
             if any(p.match(first) for p in SUMMARY_PREAMBLE_PATTERNS):
                 lines.pop(0)
+                cleaned = True
+                continue
+            break
+        while lines:
+            last = lines[-1].strip()
+            if not last:
+                lines.pop()
+                cleaned = True
+                continue
+            if any(p.match(last) for p in SUMMARY_POSTAMBLE_PATTERNS):
+                lines.pop()
                 cleaned = True
                 continue
             break
@@ -859,7 +953,7 @@ def _run_fetch(args: argparse.Namespace) -> int:
             sig, source = categorize_pr(pr)
             pr['sig_category'] = sig
             pr['categorization_source'] = source
-            pr['description'] = _sanitize_pr_title_for_markdown(pr.get('title', ''))
+            pr['description'] = _build_pr_description(pr.get('title', ''), pr.get('body', ''))
             pr['flags'] = detect_pr_flags(pr)
             pr['manual_override_sig'] = None
             pr['manual_override_description'] = None

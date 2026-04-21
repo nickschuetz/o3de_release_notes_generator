@@ -697,6 +697,79 @@ class TestSanitizeEdgeCases:
         assert result == ''
 
 
+class TestBuildPrDescription:
+    def test_no_body_uses_title(self):
+        result = release_notes._build_pr_description('Fix a bug', '')
+        assert result == 'Fix a bug.'
+
+    def test_body_with_good_first_paragraph(self):
+        body = 'This change fixes the camera rotation issue when using high DPI displays.'
+        result = release_notes._build_pr_description('Fix camera rotation', body)
+        assert 'camera rotation' in result.lower()
+        assert 'high DPI' in result
+
+    def test_body_skips_template_headers(self):
+        body = '## What does this PR do?\n\nFixes the editor crash on startup.\n\n## How was this tested?\nManually.'
+        result = release_notes._build_pr_description('Fix editor crash', body)
+        assert 'editor crash' in result.lower()
+
+    def test_body_skips_checklists(self):
+        body = '- [x] Tests pass\n- [ ] Docs updated\n\nThis improves build performance by 20%.'
+        result = release_notes._build_pr_description('Improve build', body)
+        assert 'build performance' in result.lower()
+
+    def test_body_too_short_uses_title(self):
+        body = 'Fix.'
+        result = release_notes._build_pr_description('Fix rendering bug in Atom', body)
+        assert result == 'Fix rendering bug in Atom.'
+
+    def test_body_truncated_if_long(self):
+        body = 'A' * 500
+        result = release_notes._build_pr_description('Long PR', body)
+        assert len(result) <= 305
+
+    def test_empty_body_and_title(self):
+        result = release_notes._build_pr_description('', '')
+        assert result == ''
+
+
+class TestExtractFirstParagraph:
+    def test_simple_paragraph(self):
+        body = 'This is the first paragraph.\n\nThis is the second.'
+        assert release_notes._extract_first_paragraph(body) == 'This is the first paragraph.'
+
+    def test_skips_markdown_headers(self):
+        body = '## Summary\n\nActual content here.'
+        assert release_notes._extract_first_paragraph(body) == 'Actual content here.'
+
+    def test_skips_html_comments(self):
+        body = '<!-- comment -->\nReal content.'
+        assert release_notes._extract_first_paragraph(body) == 'Real content.'
+
+    def test_multiline_paragraph(self):
+        body = 'Line one of the paragraph.\nLine two continues.\n\nNext paragraph.'
+        result = release_notes._extract_first_paragraph(body)
+        assert 'Line one' in result
+        assert 'Line two' in result
+
+    def test_all_noise(self):
+        body = '## What\n- [x] Done\n---\n'
+        assert release_notes._extract_first_paragraph(body) == ''
+
+
+class TestRos2Categorization:
+    def test_ros2_files_categorized_as_simulation(self):
+        files = ['Gems/ROS2/Code/Source/SomeFile.cpp']
+        assert release_notes._categorize_by_files(files) == 'sig/simulation'
+
+    def test_ros2_title_keyword(self):
+        assert release_notes._categorize_by_title('ROS2 sensor fix') == 'sig/simulation'
+
+    def test_ros2_controllers_files(self):
+        files = ['Gems/ROS2Controllers/Code/Source/Gripper.cpp']
+        assert release_notes._categorize_by_files(files) == 'sig/simulation'
+
+
 class TestStripAnsi:
     def test_strips_escape_codes(self):
         dirty = 'Hello\x1b[6D\x1b[K world\x1b[?25h'

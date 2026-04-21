@@ -40,7 +40,7 @@ Both scripts use only Python stdlib modules and interact with external systems (
 
 ### `release_notes.py`
 
-The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 1000 lines.
+The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 1100 lines.
 
 **Key data structures:**
 - `SIG_TITLE_KEYWORDS` - Dict mapping SIG names to title keyword lists for heuristic categorization.
@@ -84,8 +84,9 @@ GitHub Action that regenerates `sbom.cdx.json` on every push to `main` that chan
 **Input:** PR numbers per repo, GitHub repo slug(s).
 
 **Process:**
-1. For each repo, constructs GraphQL queries batching up to 30 PRs per request (~8 requests for a typical release of ~230 PRs).
+1. For each repo, constructs GraphQL queries batching up to 30 PRs per request (~8 requests for a typical release of ~230 PRs). Queries fetch title, body, labels, files, author, and merge date.
 2. Executes via `gh api graphql` (subprocess with list args). Each repo's PRs are fetched from the correct GitHub owner/repo.
+3. PR descriptions are built from the PR body's first meaningful paragraph (skipping template headers, checklists, URLs, and noise). Falls back to the title if the body is empty or too short.
 3. For each PR, categorizes by SIG using three methods in priority order:
    - **Label match:** Checks for `sig/*` GitHub labels. Highest confidence.
    - **Title heuristic:** Matches title keywords against per-SIG keyword maps.
