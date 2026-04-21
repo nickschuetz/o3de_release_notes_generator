@@ -1,14 +1,14 @@
 # 26.05.0 Release Notes
 
-I now have a good sense of the existing style from the generated summary. Here's the narrative summary:
+O3DE 26.05.0 delivers 221 changes across seven Special Interest Groups, bringing significant new capabilities alongside continued platform expansion and engine modernization. This release introduces OpenParticleSystem, a brand new particle system contributed as a standalone Gem complete with its own runtime, editor, and asset builder, giving creators a fresh set of tools for real-time visual effects. The rendering pipeline gains alternate frame rendering (AFR) support for multi-GPU configurations, new tonemapping operators, an Unlit material type, basic Vulkan CLAS (cluster-level acceleration structure) support, and anisotropic filtering enabled by default to reduce visual artifacts. On the content side, the editor now offers automatic LOD generation during mesh import, a Component Creation GUI for streamlined project development, invertible mouse wheel zoom, and a progress overlay during critical asset processing.
+
+Platform support expands meaningfully in this release. Preliminary Mac ARM64 support opens the door for native development on Apple Silicon hardware, while initial Wayland protocol support on Linux enables runtime switching between X11 and Wayland. The build system adds Emscripten configuration for future WebAssembly targeting, updates to CMake 4.2.3, and new automated review workflows for iOS and Mac. The engine also continues its modernization of legacy CryEngine code, with deprecations of Cry_Matrix44, Cry_Matrix34, Cry_Matrix33, Cry_Quat, Cry_Color, and CRY_ASSERT macros, as well as removal of the legacy particle system stubs. Core infrastructure improvements include migration of AZStd containers to their C++20 standard library equivalents, unified fast math across all platforms, streamer throughput optimizations, and PhysX 4 deprecation preparation. The SkyAtmosphere feature has been cleanly extracted from Atom into its own Gem, and the ROS 2 integration sees extensive improvements to joint manipulation, simulation interfaces, and robot importer workflows.
+
+The O3DE community continues to drive the engine forward with contributions from developers around the world. Thank you to everyone who submitted pull requests, reported issues, reviewed code, and participated in SIG discussions to make this release possible.
 
 ---
 
-O3DE 26.05.0 delivers 217 changes across seven Special Interest Groups, marking a substantial step forward for the engine's rendering capabilities, platform reach, and content creation workflows. The headline addition is OpenParticleSystem, a brand-new particle system gem that introduces a complete particle runtime, editor, and asset pipeline alongside the engine's existing visual effects tools. Alternate Frame Rendering arrives in Atom alongside basic Cluster-Level Acceleration Structure (CLAS) support in Vulkan, AgX tonemapping, and a new Unlit material type — collectively expanding the renderer's flexibility for both real-time and cinematic use cases. On the content side, automatic LOD generation in the model import pipeline and a new in-editor Component Creation GUI lower the barrier for content creators, while the ability to run SimpleMotionComponent and AnimGraphComponent on the same entity removes a long-standing animation workflow limitation.
-
-Platform support sees meaningful expansion in this release. Mac ARM64 preliminary support opens the door to native development on Apple Silicon hardware, representing a significant step in broadening the engine's platform reach. Initial Wayland support and Emscripten configuration files extend O3DE's availability on Linux desktops and the web respectively. Under the hood, the release unifies fast-math behavior across all platforms, continues migrating legacy CryEngine types — retiring Cry_Matrix44 among others in favor of AZ equivalents — and removes the stubs of the long-unused legacy particle system as part of ongoing codebase modernization. PhysX4 deprecation preparations signal the simulation team's roadmap toward PhysX5, while the decoupling of AssImp from the Scene API lays the groundwork for pluggable scene import backends. Streamer throughput optimizations, updated third-party libraries, and dozens of build and compilation fixes round out a release focused on stability and forward-looking infrastructure.
-
-Thank you to the many community contributors and SIG maintainers who drove this release forward — from major new features like OpenParticleSystem and platform ports to the steady, essential work of fixing builds, updating dependencies, and modernizing the codebase. O3DE continues to grow as a community-driven engine, and every contribution matters.
+This covers the major themes: OpenParticleSystem as a new Gem, Mac ARM64 as a platform milestone, Wayland/Emscripten platform work, CryEngine deprecations, C++ modernization, rendering improvements, and the ROS 2 simulation ecosystem. Let me know if you'd like any adjustments to tone, emphasis, or length.
 
 # Full list of changes
 
@@ -16,6 +16,7 @@ Thank you to the many community contributors and SIG maintainers who drove this 
 - Allow O3DE to be configured by \[Emscripten\](https://emscripten.org/) compiler to target webassembly. Configuration will just fail on the missing 3p dependencies which will be progressively added by the PR above and its follow-ups. [o3de#19109](https://github.com/o3de/o3de/pull/19109)
 - Update 3P version and SHA256 hash for DirectXShaderCompilerDxc-1.8.2505.1. [o3de#19180](https://github.com/o3de/o3de/pull/19180)
 - Removes the hundreds of lines of spam during configure relating to restricted objects. [o3de#19204](https://github.com/o3de/o3de/pull/19204)
+- Python could not be found if \`$USERPROFILE\` was used because it was search for only in \`$HOME/.o3de/...\`. [o3de#19230](https://github.com/o3de/o3de/pull/19230)
 - Update 3P version and SHA256 hash for DirectXShaderCompilerDxc-1.8.2505.1. [o3de#19241](https://github.com/o3de/o3de/pull/19241)
 - Pin compiler dependancies for AR. [o3de#19276](https://github.com/o3de/o3de/pull/19276)
 - When compiling development, I got an error from an warning, caused by the no usage of a variable. [o3de#19323](https://github.com/o3de/o3de/pull/19323)
@@ -69,6 +70,7 @@ Thank you to the many community contributors and SIG maintainers who drove this 
 - The product file data (as in, the compiled asset) was always using asset references (\`AZ::Data::Asset<Material> etc\`) but the source json files were using string path names like \`"material" = "Atom/Examples/Blah.material"\`. [o3de#19255](https://github.com/o3de/o3de/pull/19255)
 - Fix component selection display in Inspector window on Linux — ...and possibly some other issues that I didn't notice. [o3de#19258](https://github.com/o3de/o3de/pull/19258)
 - This PR introduces a new tab widget dedicated to **Windows**-specific platform settings in the ProjectSettingsTool (\`Editor->File->Edit Platform Settings->Windows\`). [o3de#19262](https://github.com/o3de/o3de/pull/19262)
+- Fixed all instances of error C3791: 'this' cannot be explicitly captured when the default capture mode is by copy (=). [o3de#19280](https://github.com/o3de/o3de/pull/19280)
 - This PR allows procedural prefabs to correctly refresh if they contain any child Instances. Currently after when .procprefab is updated by AssetProcessor any child Instances do not have patches correctly applied. [o3de#19283](https://github.com/o3de/o3de/pull/19283)
 - Simplify SceneAPI graph data. [o3de#19297](https://github.com/o3de/o3de/pull/19297)
 - Let's call this PR a beta. I tried to move files into folder where they might fit the "best". There are plenty of other things to move but to not to get overwhelmed by just one PR (which it is already) we do this first. [o3de#19301](https://github.com/o3de/o3de/pull/19301)
@@ -86,21 +88,23 @@ Thank you to the many community contributors and SIG maintainers who drove this 
 - PropertyHandlerDirectory is only used in one place within O3DE: the LyShine Gem's UiImageSequenceComponent.h. [o3de#19375](https://github.com/o3de/o3de/pull/19375)
 - As the title says. This PR fixes some reflection issues and does some cleanup. [o3de#19376](https://github.com/o3de/o3de/pull/19376)
 - AssetBundler did not actually save paths you specify in the GUI, since the intention there was that the gui is for constructing rule files that have blanks for you to fill in later, from the command line.  So for example, if you made a rule that generated the delta between 2 different asset lists... [o3de#19419](https://github.com/o3de/o3de/pull/19419)
+- This PR adds the \`const\` modifier to the function \`AZ::SceneAPI::Containers::SceneGraph::Find(const Name& name)\`, since the modifier is also present in the other Find functions with different parameters and this functions does not modify the SceneGraph class. [o3de#19421](https://github.com/o3de/o3de/pull/19421)
 - Adjust PrefabDomUtils to distinguish TransformComponent and GradientEditorTransformComponent. [o3de#19422](https://github.com/o3de/o3de/pull/19422)
 - This PR simply removes some dead code from Editor codebase since it is not referenced by anyone. [o3de#19438](https://github.com/o3de/o3de/pull/19438)
 - This PR fixed a coordinate system error when importing animation-only FBX files which was previously fixed by #19061 but was reintroduced by #18931. [o3de#19440](https://github.com/o3de/o3de/pull/19440)
-- Extend the Look At component's capabilities. [o3de#19441](https://github.com/o3de/o3de/pull/19441)
 - When importing a mesh which contains any kind of keyframes, it can under certain conditions be processed wrong (see #19431): This can lead to the a scene graph where a mesh node is the child of a bone node, and both nodes have a transform child node with the same parameters, which leads to the sa... [o3de#19478](https://github.com/o3de/o3de/pull/19478)
-- This deprecates all the CRY_ASSERT* macros which were forwarding macros to the AZ_Assert macros anyways. This preserves the original \`assert\` macro due to the large number of uses in the CRY_* legacy code for now. [o3de#19482](https://github.com/o3de/o3de/pull/19482)
 - Deprecation of Cry_Color (\`ColorF\`, \`ColorB\`). [o3de#19505](https://github.com/o3de/o3de/pull/19505)
 - Adds a progress overlay when editor is processing critical assets. [o3de#19513](https://github.com/o3de/o3de/pull/19513)
 - This makes it so that levels and prefabs that have previously been created with the SkyAtmosphere gem will continue to find the component in their prefab files and levels, despite it having changed its name. [o3de#19547](https://github.com/o3de/o3de/pull/19547)
 - \\[Editor\\] Fix many instances of project path args not being wrapped in quotes — This PR improves support for engine users who may have spaces in their project pathnames. [o3de#19551](https://github.com/o3de/o3de/pull/19551)
+- Original ClassWizard is not appearing in \`/Tools/\` on "install" type build package output. [o3de#19561](https://github.com/o3de/o3de/pull/19561)
 - 1. Fixes a bug where the "auto load behavior" is blown away when you assign an asset in the gui causing all GUI assigned assets to become QueueLoad. 2. Adds a "generic asset builder" to the Asset Processor.   We already had GenericAssets, this just adds a builder for them if the user opts in to d... [o3de#19572](https://github.com/o3de/o3de/pull/19572)
 - This is happening. When opening the LUA Editor, going the Options/Settings then just press the cancel button, it will reset to some strange values even though no changes where made. [o3de#19590](https://github.com/o3de/o3de/pull/19590)
 - I was using an testing the MotionMatching system and the first time i used it was extreme slow, It was drawing also some arrows and what not but to show off or get a real touch to the current speed of it I'd recommend to disable this drawing by default. This can be enabled if people need to visua... [o3de#19591](https://github.com/o3de/o3de/pull/19591)
 - \\[Editor\\] Fix pick (translate, rotate, scale) objects which are far way from origin — Please have a read at the issue I created: \[Issue\](https://github.com/o3de/o3de/issues/19600). [o3de#19605](https://github.com/o3de/o3de/pull/19605)
+- Add patch file for assimp to fix tinyusd missing includes — Close https://github.com/o3de/o3de/issues/19623 by patching Assimp. I wasn't able to repro the issue on clang 18, 20 and 22, but since two users ran into it while building it must be tackled. [o3de#19625](https://github.com/o3de/o3de/pull/19625)
 - Prevent annoying dialog upon opening material editor — Close https://github.com/o3de/o3de/issues/19612. Not yet sure on what caused the regression (will have a quick look at the history), likely something in CommandLine::GetNumMiscValues(), but either way its still important to have this safe-guard. [o3de#19627](https://github.com/o3de/o3de/pull/19627)
+- Registered "Group" now enables nested \[new\] menu generation, as well as enabling slash separation of groups "GenomeStudios/Feature" to enable deeper nesting. [o3de#19678](https://github.com/o3de/o3de/pull/19678)
 - Outliner clears selection on Asset Browser focus. This prevents entering "rename" when selecting back to the outliner entity. [o3de#19685](https://github.com/o3de/o3de/pull/19685)
 
 ## SIG-Core
@@ -115,12 +119,14 @@ Thank you to the many community contributors and SIG maintainers who drove this 
 - Unify fast math across all platforms. [o3de#19303](https://github.com/o3de/o3de/pull/19303)
 - InterlockedIncrement and InterlockedDecrement signatures — Arch-Linux, Clang 21.1.5, treats the return of "const volatile" as error/warning. const volatile is _deprecated. [o3de#19359](https://github.com/o3de/o3de/pull/19359)
 - Adds a missing override in AzCore/RTTI/BehaviorContext.h. [o3de#19389](https://github.com/o3de/o3de/pull/19389)
+- Extend the Look At component's capabilities. [o3de#19441](https://github.com/o3de/o3de/pull/19441)
 - Addresses multiple macOS build issues, with a primary focus on restoring support for generic engine builds. (i.e., when the engine is built standalone, without an accompanying project.). [o3de#19445](https://github.com/o3de/o3de/pull/19445)
 - Update 3P version and SHA256 hash for zlib-1.3.1. [o3de#19471](https://github.com/o3de/o3de/pull/19471)
 - Deprecation of Cry_Matrix44 (\`Matrix44\`). [o3de#19472](https://github.com/o3de/o3de/pull/19472)
 - Update 3P version and SHA256 hash for expat-2.7.3. [o3de#19474](https://github.com/o3de/o3de/pull/19474)
 - CryEngine used to have its own particle system, long removed.  This removes the leftover test files and references to it in code. [o3de#19475](https://github.com/o3de/o3de/pull/19475)
 - Update 3P version and SHA256 hash for OpenEXR-3.4.4. [o3de#19480](https://github.com/o3de/o3de/pull/19480)
+- This deprecates all the CRY_ASSERT* macros which were forwarding macros to the AZ_Assert macros anyways. This preserves the original \`assert\` macro due to the large number of uses in the CRY_* legacy code for now. [o3de#19482](https://github.com/o3de/o3de/pull/19482)
 - Cry_Quat deprecation. [o3de#19484](https://github.com/o3de/o3de/pull/19484)
 - Update 3P version and SHA256 hash for tiff-4.2.0.15. [o3de#19487](https://github.com/o3de/o3de/pull/19487)
 - Update 3P version and SHA256 hash for freetype-2.11.1. [o3de#19488](https://github.com/o3de/o3de/pull/19488)
@@ -136,7 +142,6 @@ Thank you to the many community contributors and SIG maintainers who drove this 
 - Fix Wignored-attributes warnings. [o3de#19593](https://github.com/o3de/o3de/pull/19593)
 - Removes the implicit \`allocator(const char*)\` constructor from \`AZStd::allocator\` and refactors all AZStd allocator classes to better match C++20 idioms. [o3de#19614](https://github.com/o3de/o3de/pull/19614)
 - Change the error message in the export project script. When bundling engine assets the error message said game instead of engine. [o3de#19631](https://github.com/o3de/o3de/pull/19631)
-- Registered "Group" now enables nested \[new\] menu generation, as well as enabling slash separation of groups "GenomeStudios/Feature" to enable deeper nesting. [o3de#19678](https://github.com/o3de/o3de/pull/19678)
 
 ## SIG-Graphics-Audio
 - Passes used in \`ROS2CameraSensorComponent\` were not moved from \`ROS2\` Gem to \`ROS2Sensors\` Gem when the code was moved. It worked correctly, as \`ROS2Sensors\` depends on \`ROS2\`. However, it makes no sense to keep the assets in the wrong place. [o3de-extras#991](https://github.com/o3de/o3de-extras/pull/991)
@@ -166,7 +171,6 @@ Thank you to the many community contributors and SIG maintainers who drove this 
 - This PR removes some no longer necessary \`const_cast\` expressions in the Atom gem, some of which were made possible due to \[PR19211\](https://github.com/o3de/o3de/pull/19211), others for unrelated reasons. [o3de#19251](https://github.com/o3de/o3de/pull/19251)
 - \`\`\` Jobs can only depend on the "common" platform or other jobs for the same platform. This is a code error, not a problem with the assets - please modify the builder to emit job\` dependencies correctly. Source Job: (platform "server", job Key: "Particle Builder") Depends on: (platform "pc", job ... [o3de#19264](https://github.com/o3de/o3de/pull/19264)
 - Fix compile issues, also the way particles are created, opened and cleanups — This PR has multiple changes. [o3de#19266](https://github.com/o3de/o3de/pull/19266)
-- Fixed all instances of error C3791: 'this' cannot be explicitly captured when the default capture mode is by copy (=). [o3de#19280](https://github.com/o3de/o3de/pull/19280)
 - This PR fixes behaviour when setting mesh asset using \`AzToolsFramework::Components::EditorComponentBase\` and \`SetPrimaryAsset\`. Previous asset assignment missed assigning asset hint what caused unwanted overrides in level.prefab. [o3de#19287](https://github.com/o3de/o3de/pull/19287)
 - This PR fixes a crash when enabling ray tracing for a debug-OBB shape. This was likely an oversight from #19123, which introduced new requirements for users of the ray tracing APIs, and added the same code for acquiring the MeshFeatureProcessor when generating debug-sphere ray tracing data, but n... [o3de#19298](https://github.com/o3de/o3de/pull/19298)
 - Feature: Additional Tonemapping Operators. [o3de#19312](https://github.com/o3de/o3de/pull/19312)
@@ -242,12 +246,4 @@ Thank you to the many community contributors and SIG maintainers who drove this 
 - Set initial position in hinge articulation within limits; Add IsRootArticulation to bus — Cherry-pick #19227 from \`stabilization\` to \`development\`. [o3de#19263](https://github.com/o3de/o3de/pull/19263)
 - PhysX4 Deprecation Notice Preperation. [o3de#19582](https://github.com/o3de/o3de/pull/19582)
 - The articulation was created without possibility to apply rotation. [o3de#19594](https://github.com/o3de/o3de/pull/19594)
-
-## Uncategorized
-
-<!-- These PRs could not be automatically categorized. Please assign them to the correct SIG section. -->
-- Find Python in $USERPROFILE. [o3de#19230](https://github.com/o3de/o3de/pull/19230)
-- Make SceneGraph::Find function const. [o3de#19421](https://github.com/o3de/o3de/pull/19421)
-- Added ClassWizard Directory to install output. [o3de#19561](https://github.com/o3de/o3de/pull/19561)
-- Add patch file for assimp to fix tinyusd missing includes. [o3de#19625](https://github.com/o3de/o3de/pull/19625)
 

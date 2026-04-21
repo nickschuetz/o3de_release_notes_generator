@@ -125,48 +125,107 @@ SIG_TITLE_KEYWORDS = {
 }
 
 SIG_FILE_PATH_PATTERNS = {
+    'sig/testing': [
+        'cmake/LYTestWrappers.cmake',
+        'Code/Framework/AzTest',
+        'Code/Tools/AzTestRunner/',
+        'Tools/LyTestTools/',
+        'Tools/RemoteConsole/',
+        'scripts/ctest/',
+    ],
     'sig/core': [
+        'Code/CrashHandler/',
         'Code/Framework/AzCore/',
         'Code/Framework/AzFramework/',
-        'Code/Framework/AzToolsFramework/',
-    ],
-    'sig/graphics-audio': [
-        'Gems/Atom/',
-        'Gems/AtomLyIntegration/',
-        'Gems/DiffuseProbeGrid/',
-        'Gems/Stars/',
-        'Gems/SkyAtmosphere/',
-        'Gems/OpenParticleSystem/',
-    ],
-    'sig/build': [
-        'cmake/',
-        'CMakeLists.txt',
-        '.github/workflows/',
-        'scripts/build/',
+        'Code/Framework/AzGameFramework/',
+        'Code/LauncherUnified/',
+        'engine.json',
+        'Gems/Archive/',
+        'Gems/Compression/',
+        'Gems/CrashReporting/',
+        'Gems/ImGui/',
+        'Gems/LmbrCentral/',
+        'Gems/Profiler/',
+        'Registry/',
+        'scripts/lldb/',
+        'scripts/o3de/',
+        'Code/Legacy/',
+        'Code/Tools/SerializeContextTools/',
+        'Templates/',
+        'Tools/EventLogTool/',
     ],
     'sig/content': [
-        'Gems/ScriptCanvas/',
-        'Gems/LyShine/',
+        'Code/Framework/AzToolsFramework/',
+        'Code/Tools/',
+        'Code/Framework/AzQtComponents/',
         'Code/Editor/',
         'Gems/EditorPythonBindings/',
-        'Gems/EMotionFX/',
+        'Gems/GraphCanvas/',
+        'Gems/GraphModel/',
+        'Gems/LandscapeCanvas/',
+        'Gems/QtForPython/',
+        'Gems/LyShine/',
+        'Gems/ScriptCanvas/',
+        'Gems/ScriptEvents/',
+        'Gems/SceneProcessing/',
+        'Gems/WhiteBox/',
+        'Gems/Prefab/',
+        'Code/Framework/AzManipulatorTestFramework/',
+        'Tools/',
     ],
     'sig/simulation': [
+        'Code/Framework/AzCore/AzCore/Math/',
+        'Code/Framework/AzFramework/AzFramework/Physics/',
+        'Gems/MotionMatching/',
+        'Gems/NvCloth/',
         'Gems/PhysX/',
+        'Gems/PhysXDebug/',
+        'Gems/EMotionFX/',
         'Gems/RecastNavigation/',
         'Gems/ROS2/',
         'Gems/ROS2Sensors/',
         'Gems/ROS2Controllers/',
         'Gems/SimulationInterfaces/',
     ],
-    'sig/platform': [
-        'Code/Framework/AzFramework/Platform/',
+    'sig/build': [
         'cmake/Platform/',
-        'restricted/',
+        'cmake/Packaging/',
+        'scripts/build/',
+        'scripts/commit_validation/',
+        'scripts/license_scanner/',
+        'scripts/signer/',
+        '.github/workflows/',
+        'python/',
     ],
     'sig/network': [
-        'Gems/Multiplayer/',
+        'Code/Framework/AzFramework/AzFramework/Network/',
         'Code/Framework/AzNetworking/',
+        'Code/Tools/AWSNativeSDKInit/',
+        'Gems/AWSClientAuth/',
+        'Gems/AWSCore/',
+        'Gems/AWSGameLift/',
+        'Gems/AWSMetrics/',
+        'Gems/HttpRequestor/',
+        'Gems/Metastream/',
+        'Gems/Multiplayer/',
+        'Gems/MultiplayerCompression/',
+        'Gems/Twitch/',
+    ],
+    'sig/graphics-audio': [
+        'Gems/Atom/',
+        'Gems/AtomLyIntegration/',
+        'Gems/AtomTressFX/',
+        'Gems/Terrain/',
+        'Gems/Audio/',
+        'Gems/Microphone/',
+        'Gems/DiffuseProbeGrid/',
+        'Gems/Stars/',
+        'Gems/SkyAtmosphere/',
+        'Gems/OpenParticleSystem/',
+        'Gems/MiniAudio/',
+    ],
+    'sig/platform': [
+        'restricted/',
     ],
 }
 
@@ -436,11 +495,15 @@ def _categorize_by_title(title: str) -> str | None:
 def _categorize_by_files(file_paths: list[str]) -> str | None:
     sig_counts: dict[str, int] = {}
     for fpath in file_paths:
+        best_sig = None
+        best_len = 0
         for sig, patterns in SIG_FILE_PATH_PATTERNS.items():
             for pattern in patterns:
-                if fpath.startswith(pattern):
-                    sig_counts[sig] = sig_counts.get(sig, 0) + 1
-                    break
+                if fpath.startswith(pattern) and len(pattern) > best_len:
+                    best_sig = sig
+                    best_len = len(pattern)
+        if best_sig:
+            sig_counts[best_sig] = sig_counts.get(best_sig, 0) + 1
     if not sig_counts:
         return None
     return max(sig_counts, key=sig_counts.get)

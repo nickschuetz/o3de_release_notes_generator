@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2026-04-21T17:56:51.251100+00:00",
+    "generated_at": "2026-04-21T18:12:45.444279+00:00",
     "from_ref": "2510.0",
     "to_ref": "development",
     "repos": [
@@ -16,8 +16,7 @@
     "categorization_summary": {
       "label": 164,
       "heuristic_title": 66,
-      "heuristic_files": 29,
-      "uncategorized": 4
+      "heuristic_files": 33
     }
   },
   "pull_requests": [
@@ -1858,8 +1857,8 @@
       "files": [
         "python/python.sh"
       ],
-      "sig_category": "uncategorized",
-      "categorization_source": "uncategorized",
+      "sig_category": "sig/build",
+      "categorization_source": "heuristic_files",
       "description": "Python could not be found if \\`$USERPROFILE\\` was used because it was search for only in \\`$HOME/.o3de/...\\`.",
       "flags": [],
       "manual_override_sig": null,
@@ -2735,7 +2734,7 @@
         "Gems/OpenParticleSystem/Tools/OpenParticleSystemEditor/Window/OpenParticleSystemEditorWindow.cpp",
         "Gems/Terrain/Code/Source/TerrainRenderer/Components/TerrainSurfaceMaterialsListComponent.cpp"
       ],
-      "sig_category": "sig/graphics-audio",
+      "sig_category": "sig/content",
       "categorization_source": "heuristic_files",
       "description": "Fixed all instances of error C3791: 'this' cannot be explicitly captured when the default capture mode is by copy (=).",
       "flags": [],
@@ -4498,8 +4497,8 @@
         "Code/Tools/SceneAPI/SceneCore/Containers/SceneGraph.h",
         "Code/Tools/SceneAPI/SceneCore/Containers/SceneGraph.inl"
       ],
-      "sig_category": "uncategorized",
-      "categorization_source": "uncategorized",
+      "sig_category": "sig/content",
+      "categorization_source": "heuristic_files",
       "description": "This PR adds the \\`const\\` modifier to the function \\`AZ::SceneAPI::Containers::SceneGraph::Find(const Name& name)\\`, since the modifier is also present in the other Find functions with different parameters and this functions does not modify the SceneGraph class.",
       "flags": [],
       "manual_override_sig": null,
@@ -4678,7 +4677,7 @@
         "Gems/LmbrCentral/Code/Source/Scripting/LookAtComponent.h",
         "Gems/ScriptCanvas/Assets/TranslationAssets/EBus/Senders/LookAt.names"
       ],
-      "sig_category": "sig/content",
+      "sig_category": "sig/core",
       "categorization_source": "heuristic_files",
       "description": "Extend the Look At component's capabilities.",
       "flags": [],
@@ -5194,7 +5193,7 @@
         "Code/Legacy/CrySystem/XConsoleVariable.h",
         "Gems/AtomLyIntegration/AtomFont/Code/Include/AtomLyIntegration/AtomFont/AtomNullFont.h"
       ],
-      "sig_category": "sig/content",
+      "sig_category": "sig/core",
       "categorization_source": "heuristic_files",
       "description": "This deprecates all the CRY_ASSERT* macros which were forwarding macros to the AZ_Assert macros anyways. This preserves the original \\`assert\\` macro due to the large number of uses in the CRY_* legacy code for now.",
       "flags": [],
@@ -6059,8 +6058,8 @@
         "Tools/CMakeLists.txt",
         "Tools/ClassCreationWizard/CMakeLists.txt"
       ],
-      "sig_category": "uncategorized",
-      "categorization_source": "uncategorized",
+      "sig_category": "sig/content",
+      "categorization_source": "heuristic_files",
       "description": "Original ClassWizard is not appearing in \\`/Tools/\\` on \"install\" type build package output.",
       "flags": [],
       "manual_override_sig": null,
@@ -7035,8 +7034,8 @@
         "Code/Tools/SceneAPI/SDKWrapper/3rdParty/Findassimp.cmake",
         "Code/Tools/SceneAPI/SDKWrapper/3rdParty/tinyusd-include.patch"
       ],
-      "sig_category": "uncategorized",
-      "categorization_source": "uncategorized",
+      "sig_category": "sig/content",
+      "categorization_source": "heuristic_files",
       "description": "Add patch file for assimp to fix tinyusd missing includes — Close https://github.com/o3de/o3de/issues/19623 by patching Assimp. I wasn't able to repro the issue on clang 18, 20 and 22, but since two users ran into it while building it must be tackled.",
       "flags": [],
       "manual_override_sig": null,
@@ -7362,7 +7361,7 @@
         "Code/Framework/AzToolsFramework/AzToolsFramework/AssetBrowser/Search/SearchWidget.cpp",
         "Code/Framework/AzToolsFramework/AzToolsFramework/AssetEditor/AssetEditorWidget.cpp"
       ],
-      "sig_category": "sig/core",
+      "sig_category": "sig/content",
       "categorization_source": "heuristic_files",
       "description": "Registered \"Group\" now enables nested \\[new\\] menu generation, as well as enabling slash separation of groups \"GenomeStudios/Feature\" to enable deeper nesting.",
       "flags": [],
