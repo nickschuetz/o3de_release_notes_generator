@@ -207,4 +207,4 @@ python -m pytest tests/ -v
 
 ## License
 
-Apache-2.0
+Apache-2.0 OR MIT (see LICENSE.txt)
