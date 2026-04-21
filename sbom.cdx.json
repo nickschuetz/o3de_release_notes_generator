@@ -3,9 +3,9 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
   "version": 1,
-  "serialNumber": "urn:uuid:4ee03557-037a-46de-a2ed-7202a2e1ab2f",
+  "serialNumber": "urn:uuid:532b8e49-3c87-40b4-a9e4-34a3048a8ce4",
   "metadata": {
-    "timestamp": "2026-04-21T16:25:35.990030+00:00",
+    "timestamp": "2026-04-21T16:29:19.103983+00:00",
     "tools": {
       "components": [
         {
@@ -19,7 +19,7 @@
     "component": {
       "type": "application",
       "name": "o3de_release_notes_generator",
-      "version": "0.2.0-beta",
+      "version": "0.3.0-beta",
       "description": "Generates O3DE release notes from merged pull requests",
       "licenses": [
         {
@@ -238,7 +238,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "1b95608f774baae63da7aadfa5f939b1ae289a54cc61865bdcead8dfdead9c6b"
+          "content": "a1cf97d404112b4db74e3cfa7873e6e9f2468c4b00f10a905d86ea93fcdedb75"
         }
       ]
     },
@@ -248,7 +248,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "284505506f669ced493bc1bd7bccd12f2ff14e492b6708f95e8cc06c5f8deaf4"
+          "content": "48e53727ab6c81dcfbd3475dfcc7152c7c81c4ce8db2dc3e4d69a2b5567a1340"
         }
       ]
     },
@@ -258,7 +258,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "bf4873443bd9ebc7c87c5111ceb7d8503dbcb6bb74763a8972ce8a147757bac2"
+          "content": "c943fcd18e973195ef8677c42d434b0f0a455cff16ce7ec0f3f2c451d4c803f8"
         }
       ]
     }

@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 LOG_FORMAT = '[%(levelname)s] %(name)s: %(message)s'
 logger = logging.getLogger('o3de.release_notes')
 
-__version__ = '0.2.0-beta'
+__version__ = '0.3.0-beta'
 
 SCHEMA_VERSION = 2
 
@@ -532,7 +532,7 @@ def merge_with_existing(
     return merged
 
 
-def _build_summary_prompt(pr_list: list[dict], version: str) -> str:
+def _build_summary_prompt(pr_list: list[dict], version: str, hint: str = '') -> str:
     by_sig: dict[str, list[str]] = {}
     for pr in pr_list:
         flags = pr.get('flags', [])
@@ -555,6 +555,14 @@ def _build_summary_prompt(pr_list: list[dict], version: str) -> str:
 
     total = sum(len(v) for v in by_sig.values())
 
+    hint_section = ''
+    if hint:
+        hint_section = (
+            f'\nAdditional guidance from the release manager:\n'
+            f'{hint}\n\n'
+            f'Incorporate this guidance into the narrative where appropriate.\n'
+        )
+
     return (
         f'Write a narrative summary for the O3DE (Open 3D Engine) {version} release notes. '
         f'This release contains {total} changes across {len(by_sig)} SIGs '
@@ -566,7 +574,8 @@ def _build_summary_prompt(pr_list: list[dict], version: str) -> str:
         f'4. Thank the community contributors\n\n'
         f'Write in the style of previous O3DE release notes — professional, '
         f'concise, and community-oriented. Do not use markdown headers or bullet '
-        f'points. Output only the narrative paragraphs, nothing else.\n\n'
+        f'points. Output only the narrative paragraphs, nothing else.\n'
+        f'{hint_section}\n'
         f'Here are the changes grouped by SIG:\n{sig_summary}'
     )
 
@@ -605,8 +614,25 @@ def _clean_summary(text: str) -> str:
     return '\n'.join(lines).strip()
 
 
-def generate_summary(pr_list: list[dict], version: str, summary_cmd: str) -> str | None:
-    prompt = _build_summary_prompt(pr_list, version)
+def _resolve_hint(hint: str) -> str:
+    if not hint:
+        return ''
+    if hint.startswith('@'):
+        filepath = pathlib.Path(hint[1:]).resolve()
+        if not filepath.is_file():
+            logger.error('Summary hint file not found: %s', filepath)
+            return ''
+        try:
+            return filepath.read_text(encoding='utf-8').strip()
+        except OSError as e:
+            logger.error('Failed to read summary hint file: %s', e)
+            return ''
+    return hint
+
+
+def generate_summary(pr_list: list[dict], version: str, summary_cmd: str, hint: str = '') -> str | None:
+    resolved_hint = _resolve_hint(hint)
+    prompt = _build_summary_prompt(pr_list, version, hint=resolved_hint)
 
     try:
         cmd_parts = shlex.split(summary_cmd)
@@ -885,7 +911,8 @@ def _run_render(args: argparse.Namespace) -> int:
     summary = None
     if getattr(args, 'generate_summary', False):
         summary_cmd = getattr(args, 'summary_cmd', DEFAULT_SUMMARY_CMD)
-        summary = generate_summary(data['pull_requests'], args.release_version, summary_cmd)
+        summary_hint = getattr(args, 'summary_hint', '') or ''
+        summary = generate_summary(data['pull_requests'], args.release_version, summary_cmd, hint=summary_hint)
         if summary:
             logger.info('Generated narrative summary (%d chars)', len(summary))
         else:
@@ -949,6 +976,8 @@ def _add_render_args(parser: argparse.ArgumentParser, require_input_json: bool =
                         help='Generate a narrative summary using an LLM (default: off)')
     parser.add_argument('--summary-cmd', default=DEFAULT_SUMMARY_CMD,
                         help=f'Command to generate summary (default: {DEFAULT_SUMMARY_CMD})')
+    parser.add_argument('--summary-hint', default='',
+                        help='Narrative guidance for the LLM — inline text or @filepath to read from a file')
 
 
 def add_parser_args(parser: argparse.ArgumentParser) -> None:

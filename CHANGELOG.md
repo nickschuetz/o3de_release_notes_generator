@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0-beta] - 2026-04-21
+
+### Added
+- `--summary-hint` flag to steer the LLM narrative — accepts inline text or `@filepath` to read from a file
+- Clickable GitHub PR links in rendered markdown output
+- LLM output cleaner (`_clean_summary()`) that strips preamble text and `---` dividers
+- ANSI escape code stripping for terminal-based LLM tools (e.g., ollama)
+- `--nowordwrap` in default ollama command to prevent word wrapping artifacts
+- PR number bounds validation (1-999999) and batch_size validation (1-100)
+- Consistent error message truncation via `_safe_stderr()` (200 char max)
+- `shlex.split()` for safe summary command parsing (supports quoted arguments)
+- `reports/` directory with example output from a full multi-repo run
+- `_clean_summary()` function to strip LLM preamble text and `---` dividers
+- 3 new tests for summary hint, plus tests for PR validation, ANSI stripping, edge cases
+
+### Changed
+- PR references now render as clickable markdown links (e.g., `[o3de#19709](https://github.com/o3de/o3de/pull/19709)`)
+- Summary prompt passed via stdin instead of `-p` flag for universal LLM compatibility
+- Default summary command updated to `ollama run --nowordwrap qwen2.5:32b`
+- `generate` subcommand no longer requires `--input-json` (set automatically from `--output-json`)
+- Version bumped to 0.3.0-beta
+
 ## [0.2.0-beta] - 2026-04-21
 
 ### Added

@@ -40,7 +40,7 @@ Both scripts use only Python stdlib modules and interact with external systems (
 
 ### `release_notes.py`
 
-The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 990 lines.
+The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 1000 lines.
 
 **Key data structures:**
 - `SIG_TITLE_KEYWORDS` - Dict mapping SIG names to title keyword lists for heuristic categorization.
@@ -49,7 +49,7 @@ The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `
 
 **Multi-repo support:** The `parse_repo_path_mappings()` function resolves per-repo local clone paths. Each repo can have its own clone via `--repo-path owner/repo=/path`, with `--default-repo-path` as the fallback.
 
-**Summary generation:** The `generate_summary()` function builds a structured prompt from categorized PR data and passes it via stdin to a configurable LLM command via subprocess (list args, no `shell=True`). Default: `ollama run --nowordwrap qwen2.5:32b` (local); also supports `claude -p` (cloud). The `_clean_summary()` function strips LLM preamble text and dividers from the output. Command is parsed via `shlex.split()`. Enabled via `--generate-summary`; disabled by default.
+**Summary generation:** The `generate_summary()` function builds a structured prompt from categorized PR data and passes it via stdin to a configurable LLM command via subprocess (list args, no `shell=True`). Default: `ollama run --nowordwrap qwen2.5:32b` (local); also supports `claude -p` (cloud). The `_clean_summary()` function strips LLM preamble text and dividers from the output. Command is parsed via `shlex.split()`. Optional `--summary-hint` injects release manager guidance into the prompt — accepts inline text or `@filepath` to read from a file (resolved via `_resolve_hint()`). Enabled via `--generate-summary`; disabled by default.
 
 ### `generate_sbom.py`
 
@@ -57,7 +57,7 @@ Generates a CycloneDX 1.5 JSON SBOM (`sbom.cdx.json`). Captures project metadata
 
 ### `tests/test_release_notes.py`
 
-120 unit tests using `pytest` and `unittest.mock`. Covers input validation (including injection attempts), multi-repo path parsing, SIG categorization (labels, title heuristics, file heuristics, priority ordering), summary prompt building, summary generation (success, failure, timeout), markdown rendering (with and without summary), incremental merging with manual override preservation, atomic file I/O, and JSON loading/validation.
+128 unit tests using `pytest` and `unittest.mock`. Covers input validation (including injection attempts), multi-repo path parsing, SIG categorization (labels, title heuristics, file heuristics, priority ordering), summary prompt building, summary generation (success, failure, timeout), markdown rendering (with and without summary), incremental merging with manual override preservation, atomic file I/O, and JSON loading/validation.
 
 ### `.github/workflows/sbom.yml`
 

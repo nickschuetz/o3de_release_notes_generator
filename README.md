@@ -36,7 +36,7 @@ o3de_release_notes_generator/
 ├── generate_sbom.py                # CycloneDX 1.5 SBOM generator
 ├── sbom.cdx.json                   # Generated SBOM (auto-updated via CI)
 ├── tests/
-│   └── test_release_notes.py       # 120 unit tests
+│   └── test_release_notes.py       # 128 unit tests
 ├── reports/                        # Generated release notes output
 ├── .github/
 │   └── workflows/
@@ -83,7 +83,8 @@ python release_notes.py render \
   --release-version <version-string> \
   [--include-uncategorized] \
   [--generate-summary] \
-  [--summary-cmd <command>]
+  [--summary-cmd <command>] \
+  [--summary-hint <text>]
 ```
 
 | Flag | Required | Default | Description |
@@ -94,6 +95,7 @@ python release_notes.py render \
 | `--include-uncategorized` | No | off | Show PRs that couldn't be categorized |
 | `--generate-summary` | No | off | Generate a narrative summary using an LLM |
 | `--summary-cmd` | No | `ollama run --nowordwrap qwen2.5:32b` | Command to generate the summary |
+| `--summary-hint` | No | - | Narrative guidance — inline text or `@filepath` to read from a file |
 
 ### `generate` - Fetch and render in one step
 
@@ -172,6 +174,31 @@ To use a different model or tool:
 ```
 
 The command must read the prompt from **stdin** and write its response to **stdout**.
+
+### Steer the narrative with a hint
+
+Use `--summary-hint` to guide the LLM toward specific themes or tone:
+
+```bash
+python release_notes.py generate \
+  --from-ref 2510.0 --to-ref development \
+  --default-repo-path ~/PROJECTS/o3de \
+  --output-json release_data.json \
+  --output-md notes.md \
+  --release-version 26.05.0 \
+  --generate-summary \
+  --summary-hint "This is a major platform expansion release. Emphasize Wayland support, Mac ARM64, and Emscripten. Note that PhysX4 deprecation is a breaking change."
+```
+
+The hint is injected into the LLM prompt as "additional guidance from the release manager" and shapes the narrative without overriding the structured PR data.
+
+To load the hint from a file, prefix the path with `@`:
+
+```bash
+  --summary-hint @release_briefing.txt
+```
+
+This is useful for longer guidance or when reusing the same narrative direction across incremental runs.
 
 ### Fetch only (for AI agent consumption)
 
@@ -270,8 +297,9 @@ When `--generate-summary` is enabled, the tool builds a structured prompt from t
 **How it works:**
 1. PRs are grouped by SIG with up to 15 titles per group (truncated for large sections)
 2. Cherry-picks and uncategorized PRs are excluded from the prompt
-3. The prompt asks for a 2-3 paragraph narrative in the style of previous O3DE release notes
-4. The LLM's output replaces the `<!-- TODO -->` placeholder in the rendered markdown
+3. If `--summary-hint` is provided (inline text or `@filepath`), it's injected as "additional guidance from the release manager"
+4. The prompt asks for a 2-3 paragraph narrative in the style of previous O3DE release notes
+5. The LLM's output is cleaned (preamble/dividers stripped) and replaces the `<!-- TODO -->` placeholder
 
 **Default command:** `ollama run --nowordwrap qwen2.5:32b` ([Ollama](https://ollama.com/) with Qwen 2.5 32B). Override with `--summary-cmd`.
 
@@ -310,7 +338,7 @@ The SBOM captures:
 python -m pytest tests/ -v
 ```
 
-120 unit tests covering input validation, multi-repo path parsing, SIG categorization, summary prompt building, summary generation, markdown rendering, incremental merging, atomic I/O, and security controls.
+128 unit tests covering input validation, multi-repo path parsing, SIG categorization, summary prompt building, summary generation, markdown rendering, incremental merging, atomic I/O, and security controls.
 
 ## Security
 

@@ -604,6 +604,46 @@ class TestBuildSummaryPrompt:
         prompt = release_notes._build_summary_prompt(prs, '1.0')
         assert '... and 5 more' in prompt
 
+    def test_with_hint(self):
+        prs = [{'title': 'Fix cmake', 'sig_category': 'sig/build', 'flags': []}]
+        prompt = release_notes._build_summary_prompt(prs, '1.0', hint='Focus on build improvements')
+        assert 'Focus on build improvements' in prompt
+        assert 'Additional guidance' in prompt
+
+    def test_without_hint(self):
+        prs = [{'title': 'Fix cmake', 'sig_category': 'sig/build', 'flags': []}]
+        prompt = release_notes._build_summary_prompt(prs, '1.0')
+        assert 'Additional guidance' not in prompt
+
+    def test_empty_hint_ignored(self):
+        prs = [{'title': 'Fix cmake', 'sig_category': 'sig/build', 'flags': []}]
+        prompt = release_notes._build_summary_prompt(prs, '1.0', hint='')
+        assert 'Additional guidance' not in prompt
+
+
+class TestResolveHint:
+    def test_inline_text(self):
+        assert release_notes._resolve_hint('Focus on platform changes') == 'Focus on platform changes'
+
+    def test_empty_string(self):
+        assert release_notes._resolve_hint('') == ''
+
+    def test_file_reference(self, tmp_path):
+        hint_file = tmp_path / 'hint.txt'
+        hint_file.write_text('Emphasize Wayland and ARM64 support.', encoding='utf-8')
+        result = release_notes._resolve_hint(f'@{hint_file}')
+        assert result == 'Emphasize Wayland and ARM64 support.'
+
+    def test_file_not_found(self, tmp_path):
+        result = release_notes._resolve_hint(f'@{tmp_path}/nonexistent.txt')
+        assert result == ''
+
+    def test_file_with_whitespace(self, tmp_path):
+        hint_file = tmp_path / 'hint.txt'
+        hint_file.write_text('\n  Focus on breaking changes.  \n', encoding='utf-8')
+        result = release_notes._resolve_hint(f'@{hint_file}')
+        assert result == 'Focus on breaking changes.'
+
 
 class TestPrNumberValidation:
     def test_valid_pr_numbers(self):
