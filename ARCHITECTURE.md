@@ -2,7 +2,12 @@
 
 ## Overview
 
-The release notes generator is a single-file Python script with three stages: **Extract**, **Categorize**, and **Render**. It uses a JSON intermediate format that supports both human editing and AI agent consumption.
+The release notes generator is a standalone Python project with zero external dependencies. It consists of two main scripts:
+
+- **`release_notes.py`** - Three-stage pipeline (Extract, Categorize, Render) that generates O3DE release notes from merged pull requests.
+- **`generate_sbom.py`** - Generates a CycloneDX 1.5 SBOM for supply chain transparency.
+
+Both scripts use only Python stdlib modules and interact with external systems (git, GitHub API) exclusively through the `gh` CLI and `git` commands via `subprocess` with list arguments.
 
 ```
                     ┌──────────────────────────────────────────────────────────────┐
@@ -18,7 +23,7 @@ The release notes generator is a single-file Python script with three stages: **
                     │         │                  │                    │           │
                     │         ▼                  ▼                    ▼           │
                     │   ┌───────────┐     ┌──────────────┐     ┌──────────────┐   │
-                    │   │  gh CLI   │     │ JSON cache   │     │ .md output   │   │
+                    │   │  gh CLI   │     │ JSON cache   │     │  .md output  │   │
                     │   │  GraphQL  │     │ (editable)   │     │              │   │
                     │   └───────────┘     └──────────────┘     └──────────────┘   │
                     └──────────────────────────────────────────────────────────────┘
@@ -29,6 +34,29 @@ The release notes generator is a single-file Python script with three stages: **
                       auth via            manual overrides       (.md file)
                       gh CLI)
 ```
+
+## Project Components
+
+### `release_notes.py`
+
+The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 770 lines.
+
+**Key data structures:**
+- `SIG_TITLE_KEYWORDS` - Dict mapping SIG names to title keyword lists for heuristic categorization.
+- `SIG_FILE_PATH_PATTERNS` - Dict mapping SIG names to file path prefixes for heuristic categorization.
+- `SIG_CANONICAL_ORDER` - List defining the fixed section ordering in rendered markdown.
+
+### `generate_sbom.py`
+
+Generates a CycloneDX 1.5 JSON SBOM (`sbom.cdx.json`). Captures project metadata, Python stdlib module inventory, and SHA-256 hashes of all source files. Approximately 160 lines.
+
+### `tests/test_release_notes.py`
+
+87 unit tests using `pytest` and `unittest.mock`. Covers input validation (including injection attempts), SIG categorization (labels, title heuristics, file heuristics, priority ordering), markdown rendering, incremental merging with manual override preservation, atomic file I/O, and JSON loading/validation.
+
+### `.github/workflows/sbom.yml`
+
+GitHub Action that regenerates `sbom.cdx.json` on every push to `main` that changes Python source files. Commits the updated SBOM back to the repository automatically.
 
 ## Data Flow
 
@@ -50,7 +78,7 @@ The release notes generator is a single-file Python script with three stages: **
 **Input:** PR numbers, GitHub repo slug(s).
 
 **Process:**
-1. Constructs GraphQL queries batching up to 30 PRs per request.
+1. Constructs GraphQL queries batching up to 30 PRs per request (~8 requests for a typical release of ~230 PRs).
 2. Executes via `gh api graphql` (subprocess with list args).
 3. For each PR, categorizes by SIG using three methods in priority order:
    - **Label match:** Checks for `sig/*` GitHub labels. Highest confidence.
@@ -79,6 +107,8 @@ The release notes generator is a single-file Python script with three stages: **
 
 ## Incremental Update Flow
 
+The tool supports re-running throughout the pre-release cycle. On subsequent runs, only new PRs are fetched from GitHub, and any manual edits to the JSON (via `manual_override_sig` and `manual_override_description` fields) are preserved.
+
 ```
 First run:                    Subsequent runs:
 
@@ -98,6 +128,21 @@ render .md                        ▼
                               render updated .md
 ```
 
+## SBOM Generation
+
+The `generate_sbom.py` script produces a CycloneDX 1.5 JSON SBOM at `sbom.cdx.json`.
+
+**Contents:**
+- Project metadata (name, version, license, repo URL)
+- 13 Python stdlib modules declared as framework dependencies with package URLs
+- SHA-256 hashes of all source files (`release_notes.py`, `generate_sbom.py`, `tests/test_release_notes.py`)
+- Explicit `cdx:externalDependencies: none` property
+- Dependency graph linking the project to its stdlib modules
+
+**Automation:** The `.github/workflows/sbom.yml` workflow regenerates the SBOM on every push to `main` that changes `*.py` files. The workflow uses `github-actions[bot]` to commit the updated SBOM, preventing infinite trigger loops (bot commits don't trigger workflows by default).
+
+**Atomic writes:** Like the main script, the SBOM generator uses `tempfile.mkstemp()` + `os.replace()` for crash-safe file output.
+
 ## Security Model
 
 ### Threat Model
@@ -111,6 +156,7 @@ render .md                        ▼
 | Output file paths | Path traversal | Resolved via `pathlib.Path.resolve()`; optional base-dir containment check |
 | JSON data files | Corruption from interrupted writes | Atomic writes via `tempfile` + `os.replace()` |
 | GitHub API responses | Malformed data | Validated structure before use; missing fields default safely |
+| Supply chain | Undetected dependency changes | CycloneDX SBOM with source file hashes; auto-updated via CI |
 
 ### OWASP Top 10 Mapping
 
@@ -119,9 +165,9 @@ render .md                        ▼
 | **A03:2021 Injection** | Subprocess calls, markdown output | All subprocess calls use list args (never `shell=True`). All user inputs validated with regex before use. PR titles sanitized for markdown. |
 | **A04:2021 Insecure Design** | Overall architecture | Defense-in-depth: validate at input, sanitize at output. Atomic file writes. Fail-closed on validation errors. |
 | **A05:2021 Security Misconfiguration** | Secret management | No hardcoded secrets. Auth delegated to `gh` CLI. Preflight check verifies auth status. |
-| **A06:2021 Vulnerable and Outdated Components** | Dependencies | Zero external dependencies. Uses only Python stdlib (`subprocess`, `json`, `re`, `pathlib`, `tempfile`, `argparse`, `logging`). |
+| **A06:2021 Vulnerable and Outdated Components** | Dependencies | Zero external dependencies. Uses only Python stdlib. SBOM tracks all components with SHA-256 hashes. |
 | **A07:2021 Identification and Authentication Failures** | GitHub API access | Auth fully managed by `gh` CLI. Script verifies `gh auth status` before making API calls. |
-| **A08:2021 Software and Data Integrity Failures** | JSON data, file I/O | JSON schema versioned (`schema_version` field). Atomic writes prevent partial/corrupt files. Manual overrides preserved across re-runs. |
+| **A08:2021 Software and Data Integrity Failures** | JSON data, file I/O, supply chain | JSON schema versioned (`schema_version` field). Atomic writes prevent partial/corrupt files. CycloneDX SBOM with file hashes for integrity verification. |
 | **A09:2021 Security Logging and Monitoring Failures** | Operational logging | Structured logging (`[LEVEL] o3de.release_notes: message`). Never logs tokens, credentials, or full API response bodies. Logs all validation failures. |
 
 ### NIST SP 800-53 Controls
@@ -133,6 +179,7 @@ render .md                        ▼
 | **AU-3 (Content of Audit Records)** | Structured log format with severity levels. Categorization summary logged on each run. |
 | **SC-28 (Protection of Information at Rest)** | Atomic file writes via `tempfile.mkstemp()` + `os.replace()` prevent data corruption from interrupted writes. |
 | **CM-7 (Least Functionality)** | Minimal stdlib-only implementation. No unnecessary network calls (only fetches new PRs on re-run). No write access to the O3DE repository. |
+| **SA-8 (Security and Privacy Engineering Principles)** | CycloneDX SBOM generated and maintained for supply chain transparency. Source file integrity verified via SHA-256 hashes. |
 
 ### Input Validation Specifications
 
