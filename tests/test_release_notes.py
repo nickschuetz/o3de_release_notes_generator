@@ -598,6 +598,70 @@ class TestBuildSummaryPrompt:
         assert '... and 5 more' in prompt
 
 
+class TestPrNumberValidation:
+    def test_valid_pr_numbers(self):
+        with mock.patch('release_notes._run_gh_command') as mock_cmd:
+            mock_cmd.return_value = {'data': {'repository': {}}}
+            release_notes.fetch_pr_metadata_batch('o3de/o3de', [1, 100, 99999])
+
+    def test_zero_pr_number_raises(self):
+        with pytest.raises(ValueError, match='Invalid PR number'):
+            release_notes.fetch_pr_metadata_batch('o3de/o3de', [0])
+
+    def test_negative_pr_number_raises(self):
+        with pytest.raises(ValueError, match='Invalid PR number'):
+            release_notes.fetch_pr_metadata_batch('o3de/o3de', [-1])
+
+    def test_huge_pr_number_raises(self):
+        with pytest.raises(ValueError, match='Invalid PR number'):
+            release_notes.fetch_pr_metadata_batch('o3de/o3de', [9999999])
+
+    def test_empty_list_returns_empty(self):
+        result = release_notes.fetch_pr_metadata_batch('o3de/o3de', [])
+        assert result == []
+
+    def test_invalid_batch_size_raises(self):
+        with pytest.raises(ValueError, match='batch_size'):
+            release_notes.fetch_pr_metadata_batch('o3de/o3de', [1], batch_size=0)
+
+    def test_batch_size_over_100_raises(self):
+        with pytest.raises(ValueError, match='batch_size'):
+            release_notes.fetch_pr_metadata_batch('o3de/o3de', [1], batch_size=101)
+
+
+class TestSanitizeEdgeCases:
+    def test_unicode_emoji(self):
+        result = release_notes._sanitize_pr_title_for_markdown('Fix bug 🐛 in renderer')
+        assert '🐛' in result
+        assert result.endswith('.')
+
+    def test_very_long_title(self):
+        long_title = 'Fix ' + 'a' * 2000
+        result = release_notes._sanitize_pr_title_for_markdown(long_title)
+        assert isinstance(result, str)
+        assert len(result) > 2000
+
+    def test_only_whitespace(self):
+        result = release_notes._sanitize_pr_title_for_markdown('   ')
+        assert result == ''
+
+    def test_empty_string(self):
+        result = release_notes._sanitize_pr_title_for_markdown('')
+        assert result == ''
+
+
+class TestStripAnsi:
+    def test_strips_escape_codes(self):
+        dirty = 'Hello\x1b[6D\x1b[K world\x1b[?25h'
+        assert release_notes._strip_ansi(dirty) == 'Hello world'
+
+    def test_clean_passthrough(self):
+        assert release_notes._strip_ansi('No escapes here.') == 'No escapes here.'
+
+    def test_empty_string(self):
+        assert release_notes._strip_ansi('') == ''
+
+
 class TestGenerateSummary:
     def test_success(self):
         with mock.patch('release_notes.shutil.which', return_value='/usr/local/bin/ollama'):

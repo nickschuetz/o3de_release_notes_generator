@@ -36,7 +36,7 @@ o3de_release_notes_generator/
 ├── generate_sbom.py                # CycloneDX 1.5 SBOM generator
 ├── sbom.cdx.json                   # Generated SBOM (auto-updated via CI)
 ├── tests/
-│   └── test_release_notes.py       # 105 unit tests
+│   └── test_release_notes.py       # 119 unit tests
 ├── .github/
 │   └── workflows/
 │       └── sbom.yml                # Auto-regenerates SBOM on push
@@ -92,7 +92,7 @@ python release_notes.py render \
 | `--release-version` | Yes | - | Release version string (e.g., `26.05.0`) |
 | `--include-uncategorized` | No | off | Show PRs that couldn't be categorized |
 | `--generate-summary` | No | off | Generate a narrative summary using an LLM |
-| `--summary-cmd` | No | `ollama run qwen2.5:32b` | Command to generate the summary |
+| `--summary-cmd` | No | `ollama run --nowordwrap qwen2.5:32b` | Command to generate the summary |
 
 ### `generate` - Fetch and render in one step
 
@@ -155,13 +155,13 @@ python release_notes.py generate \
   --generate-summary
 ```
 
-This builds a structured prompt from the categorized PR data and pipes it via stdin to the summary command (default: `ollama run qwen2.5:32b`). The generated narrative replaces the placeholder intro in the markdown output.
+This builds a structured prompt from the categorized PR data and pipes it via stdin to the summary command (default: `ollama run --nowordwrap qwen2.5:32b`). The generated narrative replaces the placeholder intro in the markdown output.
 
 To use a different model or tool:
 
 ```bash
 # Lighter model for machines with less VRAM
---generate-summary --summary-cmd "ollama run qwen2.5:14b"
+--generate-summary --summary-cmd "ollama run --nowordwrap qwen2.5:14b"
 
 # Or any tool that reads a prompt from stdin and writes to stdout
 --generate-summary --summary-cmd "my-llm-tool --flag"
@@ -269,7 +269,7 @@ When `--generate-summary` is enabled, the tool builds a structured prompt from t
 3. The prompt asks for a 2-3 paragraph narrative in the style of previous O3DE release notes
 4. The LLM's output replaces the `<!-- TODO -->` placeholder in the rendered markdown
 
-**Default command:** `ollama run qwen2.5:32b` ([Ollama](https://ollama.com/) with Qwen 2.5 32B). Override with `--summary-cmd`.
+**Default command:** `ollama run --nowordwrap qwen2.5:32b` ([Ollama](https://ollama.com/) with Qwen 2.5 32B). Override with `--summary-cmd`.
 
 **Recommended open-source models (via [Ollama](https://ollama.com/)):**
 - `qwen2.5:32b` — best quality, needs ~24GB VRAM (default)
@@ -302,7 +302,7 @@ The SBOM captures:
 python -m pytest tests/ -v
 ```
 
-105 unit tests covering input validation, multi-repo path parsing, SIG categorization, summary prompt building, summary generation, markdown rendering, incremental merging, atomic I/O, and security controls.
+119 unit tests covering input validation, multi-repo path parsing, SIG categorization, summary prompt building, summary generation, markdown rendering, incremental merging, atomic I/O, and security controls.
 
 ## Security
 

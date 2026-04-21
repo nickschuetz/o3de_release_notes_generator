@@ -8,6 +8,7 @@ import logging
 import os
 import pathlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -231,6 +232,13 @@ def parse_repo_path_mappings(
     return mappings
 
 
+MAX_STDERR_LOG_LEN = 200
+
+
+def _safe_stderr(text: str) -> str:
+    return text.strip()[:MAX_STDERR_LOG_LEN]
+
+
 def extract_pr_numbers_from_git_log(
     repo_path: pathlib.Path,
     from_ref: str,
@@ -247,7 +255,7 @@ def extract_pr_numbers_from_git_log(
         timeout=60,
     )
     if result.returncode != 0:
-        logger.error('git log failed: %s', result.stderr.strip())
+        logger.error('git log failed: %s', _safe_stderr(result.stderr))
         raise RuntimeError(f'git log failed with exit code {result.returncode}')
 
     pr_numbers = set()
@@ -292,7 +300,7 @@ def _run_gh_command(args: list[str], timeout: int = 30) -> dict:
         timeout=timeout,
     )
     if result.returncode != 0:
-        stderr = result.stderr.strip()
+        stderr = _safe_stderr(result.stderr)
         if 'rate limit' in stderr.lower() or '403' in stderr:
             logger.error('GitHub API rate limit exceeded. Try again later.')
         else:
@@ -320,12 +328,22 @@ def _check_gh_available() -> bool:
     return True
 
 
+MAX_PR_NUMBER = 999999
+
+
 def fetch_pr_metadata_batch(
     repo_slug: str,
     pr_numbers: list[int],
     batch_size: int = 30,
 ) -> list[dict]:
     repo_slug = validate_repo_slug(repo_slug)
+    if batch_size <= 0 or batch_size > 100:
+        raise ValueError(f'batch_size must be 1-100, got {batch_size}')
+    if not pr_numbers:
+        return []
+    for num in pr_numbers:
+        if not isinstance(num, int) or num <= 0 or num > MAX_PR_NUMBER:
+            raise ValueError(f'Invalid PR number: {num}')
     owner, repo = repo_slug.split('/')
 
     all_prs = []
@@ -550,10 +568,26 @@ def _build_summary_prompt(pr_list: list[dict], version: str) -> str:
     )
 
 
+ANSI_ESCAPE_PATTERN = re.compile(r'(\x1b\[[\?]?[0-9;]*[a-zA-Z]|\x1b\].*?\x07|\x1b[()][A-Z0-9])')
+
+
+def _strip_ansi(text: str) -> str:
+    return ANSI_ESCAPE_PATTERN.sub('', text)
+
+
 def generate_summary(pr_list: list[dict], version: str, summary_cmd: str) -> str | None:
     prompt = _build_summary_prompt(pr_list, version)
 
-    cmd_parts = summary_cmd.split()
+    try:
+        cmd_parts = shlex.split(summary_cmd)
+    except ValueError as e:
+        logger.error('Invalid summary command syntax: %s', e)
+        return None
+
+    if not cmd_parts:
+        logger.error('Empty summary command')
+        return None
+
     executable = cmd_parts[0]
 
     if not shutil.which(executable):
@@ -571,10 +605,10 @@ def generate_summary(pr_list: list[dict], version: str, summary_cmd: str) -> str
             timeout=120,
         )
         if result.returncode != 0:
-            logger.error('Summary generation failed: %s', result.stderr.strip()[:200])
+            logger.error('Summary generation failed: %s', _safe_stderr(result.stderr))
             return None
 
-        summary = result.stdout.strip()
+        summary = _strip_ansi(result.stdout).strip()
         if not summary:
             logger.warning('Summary command returned empty output')
             return None
@@ -589,7 +623,7 @@ def generate_summary(pr_list: list[dict], version: str, summary_cmd: str) -> str
         return None
 
 
-DEFAULT_SUMMARY_CMD = 'ollama run qwen2.5:32b'
+DEFAULT_SUMMARY_CMD = 'ollama run --nowordwrap qwen2.5:32b'
 
 
 def render_markdown(
@@ -758,6 +792,7 @@ def _run_fetch(args: argparse.Namespace) -> int:
         logger.info('Found %d PRs in %s', len(pr_numbers), repo_slug)
 
         if not pr_numbers:
+            logger.warning('No PRs found in %s between %s and %s', repo_slug, args.from_ref, args.to_ref)
             continue
 
         logger.info('Fetching PR metadata from GitHub for %s', repo_slug)
@@ -869,9 +904,10 @@ def _add_fetch_args(parser: argparse.ArgumentParser) -> None:
                         help='Output JSON file path')
 
 
-def _add_render_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument('--input-json', required=True,
-                        help='Input JSON file path')
+def _add_render_args(parser: argparse.ArgumentParser, require_input_json: bool = True) -> None:
+    if require_input_json:
+        parser.add_argument('--input-json', required=True,
+                            help='Input JSON file path')
     parser.add_argument('--output-md', required=True,
                         help='Output markdown file path')
     parser.add_argument('--release-version', required=True, dest='release_version',
@@ -899,7 +935,7 @@ def add_parser_args(parser: argparse.ArgumentParser) -> None:
 
     gen_parser = subparsers.add_parser('generate', help='Fetch and render in one step')
     _add_fetch_args(gen_parser)
-    _add_render_args(gen_parser)
+    _add_render_args(gen_parser, require_input_json=False)
     _add_common_args(gen_parser)
     gen_parser.set_defaults(func=_run_generate)
 

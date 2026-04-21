@@ -40,7 +40,7 @@ Both scripts use only Python stdlib modules and interact with external systems (
 
 ### `release_notes.py`
 
-The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 920 lines.
+The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 960 lines.
 
 **Key data structures:**
 - `SIG_TITLE_KEYWORDS` - Dict mapping SIG names to title keyword lists for heuristic categorization.
@@ -49,7 +49,7 @@ The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `
 
 **Multi-repo support:** The `parse_repo_path_mappings()` function resolves per-repo local clone paths. Each repo can have its own clone via `--repo-path owner/repo=/path`, with `--default-repo-path` as the fallback.
 
-**Summary generation:** The `generate_summary()` function builds a structured prompt from categorized PR data and passes it via stdin to a configurable LLM command (default: `ollama run qwen2.5:32b`) via subprocess (list args, no `shell=True`). Enabled via `--generate-summary`; disabled by default.
+**Summary generation:** The `generate_summary()` function builds a structured prompt from categorized PR data and passes it via stdin to a configurable LLM command (default: `ollama run --nowordwrap qwen2.5:32b`) via subprocess (list args, no `shell=True`). Enabled via `--generate-summary`; disabled by default.
 
 ### `generate_sbom.py`
 
@@ -57,7 +57,7 @@ Generates a CycloneDX 1.5 JSON SBOM (`sbom.cdx.json`). Captures project metadata
 
 ### `tests/test_release_notes.py`
 
-105 unit tests using `pytest` and `unittest.mock`. Covers input validation (including injection attempts), multi-repo path parsing, SIG categorization (labels, title heuristics, file heuristics, priority ordering), summary prompt building, summary generation (success, failure, timeout), markdown rendering (with and without summary), incremental merging with manual override preservation, atomic file I/O, and JSON loading/validation.
+119 unit tests using `pytest` and `unittest.mock`. Covers input validation (including injection attempts), multi-repo path parsing, SIG categorization (labels, title heuristics, file heuristics, priority ordering), summary prompt building, summary generation (success, failure, timeout), markdown rendering (with and without summary), incremental merging with manual override preservation, atomic file I/O, and JSON loading/validation.
 
 ### `.github/workflows/sbom.yml`
 
@@ -102,7 +102,7 @@ GitHub Action that regenerates `sbom.cdx.json` on every push to `main` that chan
 **Input:** JSON data from Stage 2, version string, optional summary generation config.
 
 **Process:**
-1. If `--generate-summary` is enabled, builds a structured prompt from the PR data and passes it via stdin to the configured LLM command (default: `ollama run qwen2.5:32b`) via subprocess with list args.
+1. If `--generate-summary` is enabled, builds a structured prompt from the PR data and passes it via stdin to the configured LLM command (default: `ollama run --nowordwrap qwen2.5:32b`) via subprocess with list args.
 2. Groups PRs by SIG category.
 3. Filters out cherry-picks and stabilization sync PRs.
 4. Renders markdown with fixed SIG ordering matching the established O3DE release notes format.
@@ -167,7 +167,7 @@ The `generate_sbom.py` script produces a CycloneDX 1.5 JSON SBOM at `sbom.cdx.js
 | Output file paths | Path traversal | Resolved via `pathlib.Path.resolve()`; optional base-dir containment check |
 | JSON data files | Corruption from interrupted writes | Atomic writes via `tempfile` + `os.replace()` |
 | GitHub API responses | Malformed data | Validated structure before use; missing fields default safely |
-| LLM summary command | Command injection via `--summary-cmd` | Command split by whitespace, executed via subprocess with list args; executable checked via `shutil.which()` before invocation |
+| LLM summary command | Command injection via `--summary-cmd` | Command parsed via `shlex.split()` (respects shell quoting), executed via subprocess with list args; executable checked via `shutil.which()` before invocation |
 | LLM output | Prompt injection in generated narrative | Output is inserted into markdown intro only; not used in shell commands, file paths, or API calls |
 | Supply chain | Undetected dependency changes | CycloneDX SBOM with source file hashes; auto-updated via CI |
 
@@ -217,4 +217,4 @@ subprocess.run(['gh', 'auth', 'status'], ...)
 subprocess.run(cmd_parts, input=prompt, ...)  # summary generation via stdin
 ```
 
-No call uses `shell=True`. The `from_ref` and `to_ref` values are validated before interpolation into the argument list, preventing argument injection (e.g., a ref like `--exec=malicious` is rejected by the leading-hyphen check). The summary command is split by whitespace and the executable is verified via `shutil.which()` before invocation.
+No call uses `shell=True`. The `from_ref` and `to_ref` values are validated before interpolation into the argument list, preventing argument injection (e.g., a ref like `--exec=malicious` is rejected by the leading-hyphen check). The summary command is parsed via `shlex.split()` (respects shell quoting) and the executable is verified via `shutil.which()` before invocation. PR numbers are validated to be positive integers within bounds (1-999999) before inclusion in GraphQL queries.

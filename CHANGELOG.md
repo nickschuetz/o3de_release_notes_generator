@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-repo support: each repo can have its own local clone via `--repo-path owner/repo=/path/to/clone`
 - `--default-repo-path` flag for setting the fallback clone path when no explicit mapping is given
 - Automated narrative summary generation via `--generate-summary` flag (default: off)
-- `--summary-cmd` flag to configure the LLM command (default: `ollama run qwen2.5:32b`)
+- `--summary-cmd` flag to configure the LLM command (default: `ollama run --nowordwrap qwen2.5:32b`)
 - Summary prompt builder that groups PRs by SIG with truncation for large sections
 - 18 new unit tests for multi-repo parsing, summary prompt building, and summary generation
 
