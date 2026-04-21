@@ -18,12 +18,12 @@ build/
 .DS_Store
 Thumbs.db
 
-# Generated release notes output
-release_data.json
-*.generated.json
-*.generated.md
-26050_release_notes.md
+# Generated output in project root (ad-hoc runs)
+/release_data.json
+/*.generated.json
+/*.generated.md
+/*_release_notes.md
+/*_release_data.json
 
-# General output patterns — catch ad-hoc runs
-*_release_notes.md
-*_release_data.json
+# Reports dir is tracked — don't ignore it
+!reports/

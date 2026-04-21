@@ -37,6 +37,7 @@ o3de_release_notes_generator/
 ├── sbom.cdx.json                   # Generated SBOM (auto-updated via CI)
 ├── tests/
 │   └── test_release_notes.py       # 119 unit tests
+├── reports/                        # Generated release notes output
 ├── .github/
 │   └── workflows/
 │       └── sbom.yml                # Auto-regenerates SBOM on push
