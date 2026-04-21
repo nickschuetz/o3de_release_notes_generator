@@ -500,6 +500,7 @@ PR_BODY_NOISE_PATTERNS = [
     re.compile(r'^---+$'),
     re.compile(r'^<!--'),
     re.compile(r'^!\['),
+    re.compile(r'^<img\s', re.IGNORECASE),
     re.compile(r'^https?://'),
     re.compile(r'^\*\*Full Changelog\*\*'),
     re.compile(r'^Signed-off-by:', re.IGNORECASE),
@@ -507,14 +508,11 @@ PR_BODY_NOISE_PATTERNS = [
     re.compile(r'^\*\s*$'),
     re.compile(r'^-\s*https?://'),
     re.compile(r'^Automated PR', re.IGNORECASE),
+    re.compile(r'^\[?screenshot', re.IGNORECASE),
+    re.compile(r'^!\[image\]', re.IGNORECASE),
 ]
 
-
-DESCRIPTION_REJECT_PATTERNS = [
-    re.compile(r'^(Related\s*(to)?|See also|Fixes|Closes|Resolves)\s*:?\s*[-#h]', re.IGNORECASE),
-    re.compile(r'^\*\s*(Updated|Added|Fixed|Changed|Removed)\s', re.IGNORECASE),
-    re.compile(r'^-\s*https?://'),
-]
+BULLET_PATTERN = re.compile(r'^[\-\*]\s+')
 
 
 def _build_pr_description(title: str, body: str) -> str:
@@ -526,13 +524,17 @@ def _build_pr_description(title: str, body: str) -> str:
     if not first_paragraph:
         return sanitized_title
 
-    if any(p.match(first_paragraph) for p in DESCRIPTION_REJECT_PATTERNS):
+    if len(first_paragraph) <= 20 or len(first_paragraph) > 300:
         return sanitized_title
 
-    if len(first_paragraph) <= 20:
-        return sanitized_title
+    title_words = set(re.findall(r'[a-zA-Z]{3,}', title.lower()))
+    para_words = set(re.findall(r'[a-zA-Z]{3,}', first_paragraph.lower()))
+    overlap = title_words & para_words
 
-    if len(first_paragraph) > 300:
+    if len(title_words) > 0 and len(overlap) / len(title_words) < 0.2:
+        combined = f'{sanitized_title.rstrip(".")} — {first_paragraph}'
+        if len(combined) <= 300:
+            return _sanitize_pr_title_for_markdown(combined)
         return sanitized_title
 
     return _sanitize_pr_title_for_markdown(first_paragraph)
@@ -541,6 +543,7 @@ def _build_pr_description(title: str, body: str) -> str:
 def _extract_first_paragraph(body: str) -> str:
     lines = body.split('\n')
     paragraph_lines = []
+    is_bullet_list = False
 
     for line in lines:
         stripped = line.strip()
@@ -552,9 +555,16 @@ def _extract_first_paragraph(body: str) -> str:
             if paragraph_lines:
                 break
             continue
+
+        if BULLET_PATTERN.match(stripped):
+            is_bullet_list = True
+
         paragraph_lines.append(stripped)
 
     if not paragraph_lines:
+        return ''
+
+    if is_bullet_list:
         return ''
 
     paragraph = ' '.join(paragraph_lines)

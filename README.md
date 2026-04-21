@@ -36,7 +36,7 @@ o3de_release_notes_generator/
 ├── generate_sbom.py                # CycloneDX 1.5 SBOM generator
 ├── sbom.cdx.json                   # Generated SBOM (auto-updated via CI)
 ├── tests/
-│   └── test_release_notes.py       # 143 unit tests
+│   └── test_release_notes.py       # 149 unit tests
 ├── reports/                        # Generated release notes output
 ├── .github/
 │   └── workflows/
@@ -338,7 +338,7 @@ The SBOM captures:
 python -m pytest tests/ -v
 ```
 
-143 unit tests covering input validation, multi-repo path parsing, SIG categorization, summary prompt building, summary generation, markdown rendering, incremental merging, atomic I/O, and security controls.
+149 unit tests covering input validation, multi-repo path parsing, SIG categorization, summary prompt building, summary generation, markdown rendering, incremental merging, atomic I/O, and security controls.
 
 ## Security
 

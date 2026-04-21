@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2026-04-21T17:41:37.442269+00:00",
+    "generated_at": "2026-04-21T17:56:51.251100+00:00",
     "from_ref": "2510.0",
     "to_ref": "development",
     "repos": [
@@ -346,7 +346,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "label",
-      "description": "Fixes blendshapes (\"morph targets\") not working.",
+      "description": "Fixes blendshapes (\"morph targets\") not working — Fixes https://github.com/o3de/o3de/issues/19058.",
       "flags": [
         "stabilization-sync"
       ],
@@ -500,7 +500,7 @@
       ],
       "sig_category": "sig/build",
       "categorization_source": "label",
-      "description": "This PR fixes compile errors for Clang20, which are mostly caused by more strict heuristics: * Use \\`memcpy\\`/\\`memset\\` for non-trivially-copyable classes (either remove the memcpy call or make the class/struct trivially copyable) * In one instance (Task.cpp move constructor) this was not easily pos...",
+      "description": "Fix Clang20 compile errors.",
       "flags": [
         "stabilization-sync"
       ],
@@ -704,7 +704,7 @@
       ],
       "sig_category": "sig/build",
       "categorization_source": "label",
-      "description": "- Updates the build workflows to include a new environment variable, \\`LY_PACKAGE_SERVER_URLS\\`, which uses the current cloudfront CDNs for Dev and Prod 3P buckets - This allows 3P packages that were published to the 3P Dev bucket to be pulled into Github Actions AR.",
+      "description": "GHA AR 3P Dev Bucket.",
       "flags": [
         "stabilization-sync"
       ],
@@ -971,7 +971,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "label",
-      "description": "I basically went through and looked for bad assets, errors in AP during startup, and anything related to the First Time User Experience (FTUE) of starting O3DE when you have no cache yet (so completely empty cache!).",
+      "description": "Fixes Many issues with Assetprocessor Dependencies — I basically went through and looked for bad assets, errors in AP during startup, and anything related to the First Time User Experience (FTUE) of starting O3DE when you have no cache yet (so completely empty cache!).",
       "flags": [
         "stabilization-sync"
       ],
@@ -1017,7 +1017,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "label",
-      "description": "Android application creates MainWindow on APP_CMD_INIT_WINDOW command and destroys it on APP_CMD_TERM_WINDOW command. When an android app goes into background on APP_CMD_PAUSE command then its execution is stopped via androidEnv->SetIsRunning(false); and the MainWindow is destroyed on APP_CMD_TER...",
+      "description": "Fix crash after resuming Android build.",
       "flags": [
         "stabilization-sync"
       ],
@@ -1110,7 +1110,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "heuristic_title",
-      "description": "This PR is a revival of https://github.com/aws/lumberyard/pull/540, I revived it so that I can play an animation clip on the editor without having to disable or enable the simple motion component.",
+      "description": "EmotionFX: Ability for SimpleMotionComponent & AnimGraphComponent to exist on same entity — This PR is a revival of https://github.com/aws/lumberyard/pull/540, I revived it so that I can play an animation clip on the editor without having to disable or enable the simple motion component.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -1309,7 +1309,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "heuristic_files",
-      "description": "The number of command lists per scope is computed from the costs computed from various scope parameters. We had a case were a complex \\`FullscreenTrianglePass\\` got 2 command lists while only having one \\`DrawItem\\`. This led to the fullscreen \\`DrawItem\\` being submitted twice. This PR limits the numb...",
+      "description": "FrameGraphExecuter: Limit commandListCount to estimatedItemCount.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -1505,7 +1505,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "label",
-      "description": "This PR contributes an open particle system to the O3DE. It is a standalone Gem. It contains a particle runtime, a particle editor, particle asset and its builder.",
+      "description": "Introduce OpenParticleSystem — This PR contributes an open particle system to the O3DE. It is a standalone Gem. It contains a particle runtime, a particle editor, particle asset and its builder.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -1785,7 +1785,7 @@
       ],
       "sig_category": "sig/simulation",
       "categorization_source": "label",
-      "description": "There are two main changes in this PR in the \\`ArticulationLilnk\\` Component, solving problems or possible problems. Both did exist before, but it is better to solve the issue in 2510 than wait for another release. The changes are small and are not likely to introduce new issues.",
+      "description": "Set initial position in hinge articulation within limits; Add IsRootArticulation to bus.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -1911,7 +1911,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "label",
-      "description": "This PR replaces \\[PR 18740\\](https://github.com/o3de/o3de/pull/18740), since that PR had several impactful changes that were merged in separate PRs since.",
+      "description": "Deferred Fullscreen Draw Items — This PR replaces \\[PR 18740\\](https://github.com/o3de/o3de/pull/18740), since that PR had several impactful changes that were merged in separate PRs since.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -1941,7 +1941,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "label",
-      "description": "Potential fix for \\[PR 19208\\](https://github.com/o3de/o3de/issues/19208).",
+      "description": "Fix crash when accessing unbound textures in materials — Potential fix for \\[PR 19208\\](https://github.com/o3de/o3de/issues/19208).",
       "flags": [
         "stabilization-sync"
       ],
@@ -2192,7 +2192,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "label",
-      "description": "* Replaces all usage of the SimuCore/math objects with AZCore Math objects. * Replaces use of vector/unorderedmap/etc wih AZCore objects * Replaces use of uint_32t, etc, with AZ::u32 objects * replaces constants in simucore with corresponding AZ constants like \\`Constants::Pi\\` and so on. * Deletes...",
+      "description": "Replace OpenParticleSystem SimuCore math with AzCore math.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -2322,7 +2322,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "heuristic_title",
-      "description": "...and possibly some other issues that I didn't notice.",
+      "description": "Fix component selection display in Inspector window on Linux — ...and possibly some other issues that I didn't notice.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -2345,7 +2345,7 @@
       ],
       "sig_category": "sig/build",
       "categorization_source": "label",
-      "description": "The O3DE.GameLauncher target is a sort of universal empty application script-only-mode uses to launch the game (using \\`O3DE.GameLauncher.exe --project-path=xxx\\` where the gamelauncher then reads the project configuration to find out what gems to load and load them.",
+      "description": "Fix monolithic builds trying to build dummy O3DE Launcher app.",
       "flags": [
         "stabilization-sync"
       ],
@@ -2401,7 +2401,7 @@
       ],
       "sig_category": "sig/simulation",
       "categorization_source": "label",
-      "description": "Cherry-pick #19227 from \\`stabilization\\` to \\`development\\`.",
+      "description": "Set initial position in hinge articulation within limits; Add IsRootArticulation to bus — Cherry-pick #19227 from \\`stabilization\\` to \\`development\\`.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -2590,7 +2590,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "label",
-      "description": "This PR has multiple changes.",
+      "description": "Fix compile issues, also the way particles are created, opened and cleanups — This PR has multiple changes.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -2859,7 +2859,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "label",
-      "description": "Cherry pick changes from \\[QT6 branch\\](https://github.com/o3de/o3de/tree/qt6) to ease review when it will come in action : - Replace \\[QRegExp\\](https://doc.qt.io/qt-6/qregexp.html) with \\[QRegularExpression\\](https://doc.qt.io/qt-6/qregularexpression.html) - Replace setMargins with \\[setContentsMargin...",
+      "description": "Cherry pick more changes from qt6 branch.",
       "flags": [
         "cherry-pick"
       ],
@@ -2906,7 +2906,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "label",
-      "description": "One github actions machine failed one time with this test, in a way I can't figure out.",
+      "description": "Adds additional unit tests for AZStd::copy_backward — One github actions machine failed one time with this test, in a way I can't figure out.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -3096,7 +3096,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "label",
-      "description": "What does this PR do?.",
+      "description": "Cherry pick more changes from QT6 branch — What does this PR do?.",
       "flags": [
         "cherry-pick"
       ],
@@ -3146,7 +3146,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "label",
-      "description": "The PR made two changes to the SceneAPI: * Expose the underlying data container for GraphData nodes. * Remove \"control point\" from MeshData/BlendShapeData as they unnecessarily complicate the API but has no actual use.",
+      "description": "Simplify SceneAPI graph data.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -3213,7 +3213,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "label",
-      "description": "This PR fixes that \\`qRegisterMetaType\\` is called with mismatching arguments for the \\`s64\\` type, which leads to incorrect allocations which are made visible by AddressSanitizer (#19279).",
+      "description": "Fix potential crash in Qt by correctly registering s64 type — This PR fixes that \\`qRegisterMetaType\\` is called with mismatching arguments for the \\`s64\\` type, which leads to incorrect allocations which are made visible by AddressSanitizer (#19279).",
       "flags": [
         "stabilization-sync"
       ],
@@ -3394,7 +3394,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "label",
-      "description": "Note to reviewers, this consists of 2 commits, the first one is the changes to the cmake files, the second one is the changes to the headers and cpp files, to ease review.  The changes to the cpp and header files was required for two cases * Where we were converting from double literal (ie, \\`1.32...",
+      "description": "Unify fast math across all platforms.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -3465,7 +3465,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "heuristic_files",
-      "description": "Cherry pick changes from \\[QT6 branch\\](https://github.com/o3de/o3de/tree/qt6) to ease review when it will come in action :.",
+      "description": "Qt6 cherrypick — Cherry pick changes from \\[QT6 branch\\](https://github.com/o3de/o3de/tree/qt6) to ease review when it will come in action :.",
       "flags": [
         "cherry-pick"
       ],
@@ -3490,7 +3490,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "heuristic_title",
-      "description": "Implements AgX tonemapping based on Google Filament's 7th order polynomial sigmoid approximation. - Default AgX style is fairly low contrast compared to other tonemappers like ACES. Color grading should be adjusted. - Punchy AgX style introduces some contrast and saturation into the tonemapper, b...",
+      "description": "Feature: Additional Tonemapping Operators.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -3718,7 +3718,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "label",
-      "description": "The code is simply wrong, it was only saving fields if empty, instead of if not empty.",
+      "description": "Fixes a bug where particles would discard mesh or skeleton mesh info — The code is simply wrong, it was only saving fields if empty, instead of if not empty.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -3828,7 +3828,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "label",
-      "description": "Fixes a multi-device problem in DiffuseProbeGrid:.",
+      "description": "Fix deviceIndex for DiffuseProbeGridVisualizationPreparePass — Fixes a multi-device problem in DiffuseProbeGrid:.",
       "flags": [
         "stabilization-sync"
       ],
@@ -3858,7 +3858,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "heuristic_title",
-      "description": "This PR does the following:.",
+      "description": "\\\\[OpenParticleSystem\\\\] Small fixes and editor improvements — This PR does the following:.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -3878,7 +3878,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "heuristic_title",
-      "description": "Improves two error messages in Atom: - When a buffer view views memory outside the buffer bounds: Show both the buffer size and the end of the given view - When the buffer stride side does not match the SRGs stride size: Show both the buffer stride size and the SRG input stride size.",
+      "description": "Improve some Atom error messages.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -3933,7 +3933,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "label",
-      "description": "The ScriptCanvas standalone application change had some quality, stability, and performance issues that need to be addressed before the change can be permanently enabled, these are being tracked in this project: github.com/orgs/o3de/projects/77.",
+      "description": "Made the ScriptCanvasApplication toggleable with a cmake setting.",
       "flags": [
         "stabilization-sync"
       ],
@@ -3956,7 +3956,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "label",
-      "description": "Arch-Linux, Clang 21.1.5, treats the return of \"const volatile\" as error/warning. const volatile is _deprecated.",
+      "description": "InterlockedIncrement and InterlockedDecrement signatures — Arch-Linux, Clang 21.1.5, treats the return of \"const volatile\" as error/warning. const volatile is _deprecated.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -4130,7 +4130,7 @@
       ],
       "sig_category": "sig/platform",
       "categorization_source": "heuristic_title",
-      "description": "Revisits const volatile that cannot be returned, volatile cannot be returned either.",
+      "description": "Remove Interlocked functions and mutex from LinuxSpecific.h — Revisits const volatile that cannot be returned, volatile cannot be returned either.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -4457,7 +4457,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "label",
-      "description": "A few shaders had been added or changed, since last the seedlist was made, and the seedlist has not been updated to compensate.",
+      "description": "Adds missing assets to the default seed lists for Asset Bundling / Release shipping — A few shaders had been added or changed, since last the seedlist was made, and the seedlist has not been updated to compensate.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -4521,7 +4521,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "label",
-      "description": "Deals with warnings regarding missing Parent Entity. The check which produce this warning was searching for TransformComponent in string type name that can be something like: \\`\\`\\` {27F1E1A1-8D9D-4C3B-BD3A-AFB9762449C0} TransformComponent \\`\\`\\` This too simple logic catch: \\`\\`\\` EditorGradientTransform...",
+      "description": "Adjust PrefabDomUtils to distinguish TransformComponent and GradientEditorTransformComponent.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -4545,7 +4545,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "label",
-      "description": "**What was added:** - \\`Unlit.azsl\\` - AZSL shader implementation with unlit rendering support - \\`Unlit.shader\\` - Shader configuration file for forward pass rendering - \\`Unlit.materialtype\\` - Material type definition with standard O3DE material properties.",
+      "description": "Add Unlit material type to Atom Gem.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -4680,7 +4680,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "heuristic_files",
-      "description": "- Add a strength parameter that determines how quickly the rotation approaches the target, and therefore also how much it resists the change in rotation. - Add options to disable rotating about X, Y, and/or Z (pitch, roll, and yaw). - Add a bool that enables or disables the component. - Add a boo...",
+      "description": "Extend the Look At component's capabilities.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -5247,7 +5247,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "label",
-      "description": "Deprecation of Cry_Quat (\\`Quat\\`): * Update all usages of \\`Quat\\` * Remove all usage of \\`Quat\\` in \\`Variable.h\\` * Mark \\`Quat\\` as deprecated in favor of \\`AZ::Quaternion\\`.",
+      "description": "Cry_Quat deprecation.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -5398,7 +5398,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "label",
-      "description": "Deprecation of Cry_Matrix34 (\\`Matrix34\\`): * Update all usages of \\`Matrix34\\` * Mark \\`Matrix34\\`as deprecated in favor of \\`AZ::Matrix3x4\\` * Add test to verify equality of functions \\`Matrix33::CreateRotationXYZ\\` and \\`AZ::Matrix3x3(AZ::Quaternion::CreateFromEulerRadiansZYX)\\`: I did not look into the i...",
+      "description": "Cry_Matrix34 deprecation.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -5481,7 +5481,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "heuristic_title",
-      "description": "* Deprecate Cry's \\`CryGetCurrentThreadId()\\` in favor of AZStd::this_thread::get_id() * Replaced \\`threadID\\` with \\`AZStd::thread_id\\` * Removed Linux/Apple specific Cry implementation of \\`GetCurrentThreadId()\\`.",
+      "description": "Update Cry Legacy to use \\`AZStd::this_thread::get_id()\\` instead of \\`CryGetCurrentThread()\\`.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -5507,7 +5507,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "label",
-      "description": "Deprecation of Cry_Matrix33 (\\`Matrix33\\`): * Update all usages of \\`Matrix33\\` * Mark \\`Matrix33\\` as deprecated in favor of \\`AZ::Matrix3x3\\`.",
+      "description": "Cry_Matrix33 deprecation.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -5735,7 +5735,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "label",
-      "description": "* Whenever something in the editor would query asset status and block to wait for it, the application would previously, freeze and \"Become unresponsive\". This change adds a progress bar loading animation thing that appears when the editor is waiting for the asset to compile, after about 1.5s, to ...",
+      "description": "Adds a progress overlay when editor is processing critical assets.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -5769,7 +5769,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "label",
-      "description": "* SAFE_DELETE, SAFE_DELETE_ARRAY, and SAFE_RELEASE were defined in multiple places with the same definition. Consolidated to a common header, location * Moved to AzCore (base.h) due to its use outside of legacy cry code * \\`ILINE\\` was also defined in multiple places with the same definition. Conso...",
+      "description": "Cry Common Cleanup Chores.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -5937,7 +5937,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "heuristic_title",
-      "description": "This PR improves support for engine users who may have spaces in their project pathnames.",
+      "description": "\\\\[Editor\\\\] Fix many instances of project path args not being wrapped in quotes — This PR improves support for engine users who may have spaces in their project pathnames.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -5963,7 +5963,7 @@
       ],
       "sig_category": "sig/build",
       "categorization_source": "label",
-      "description": "New Workflows: - Added \\`ios-build.yml\\` workflow (disabled by default pending MiniAudio fixes; also includes a broken test job placeholder, which needs a simulator to be provisioned to work) - Added \\`mac-build.yml\\` workflow for macOS builds.",
+      "description": "Automated Review Workflows for iOS and Mac.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -6013,7 +6013,7 @@
       ],
       "sig_category": "sig/build",
       "categorization_source": "heuristic_title",
-      "description": "Configuration Changes.",
+      "description": "Fix clang-cl based Windows builds — ### Configuration Changes.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -6083,7 +6083,7 @@
       ],
       "sig_category": "sig/build",
       "categorization_source": "label",
-      "description": "This does NOT update the min requirement to 3.30, but takes advantage of the fetchcontent changes if it IS available.",
+      "description": "CMake will use policy CMP0168 if it is available — This does NOT update the min requirement to 3.30, but takes advantage of the fetchcontent changes if it IS available.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -6130,7 +6130,7 @@
       ],
       "sig_category": "sig/build",
       "categorization_source": "heuristic_title",
-      "description": "- Restore explicit MSVC debug-info flag handling for custom Profile config. - Use \\`/Z7\\` only for known caching launchers (ccache, sccache), otherwise \\`/Zi\\`. - Keep \\`/ZI\\` for Debug when incremental linking is enabled (with compatibility warning). - Replace \\`CMAKE_MSVC_DEBUG_INFORMATION_FORMAT\\` rel...",
+      "description": "Fix MSVC Debug Symbols with Compiler Launchers.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -6334,7 +6334,7 @@
       ],
       "sig_category": "sig/simulation",
       "categorization_source": "label",
-      "description": "* Update Automated Testing to use PhysX5 * Update the DefaultProject and ScriptOnly project templates to use PhysX5 * Update the PhysX4 gem description to communication the deprecation notice and instructions. * Add o3de script command 'upgrade-physx-gem' to update a PhysX configured project to u...",
+      "description": "PhysX4 Deprecation Notice Preperation.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -6580,7 +6580,7 @@
       ],
       "sig_category": "sig/build",
       "categorization_source": "heuristic_title",
-      "description": "* Update the desired CMake version for packaging from 3.24.0 to 4.2.3 to bundle the latest tested version without needing to install CMake (this can be overridden by installing CMake in the local environment) as defined in https://github.com/o3de/o3de/issues/19574.",
+      "description": "Update bundled CMake to 4.2.3 and update build configurations.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -6600,7 +6600,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "heuristic_files",
-      "description": "\\`EditorBaseComponentMode.cpp\\` used \\`DECLARE_EBUS_INSTANTIATION\\` / \\`DECLARE_EBUS_INSTANTIATION_WITH_TRAITS\\` macros for explicit template instantiation, which do not apply \\`dllexport\\`. However, the corresponding extern declarations in \\`EditorComponentModeBus.h\\` use \\`AZ_DECLARE_EBUS_SINGLE_ADDRESS\\` ...",
+      "description": "Fix Wignored-attributes warnings.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -6712,7 +6712,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "heuristic_title",
-      "description": "Please have a read at the issue I created: \\[Issue\\](https://github.com/o3de/o3de/issues/19600).",
+      "description": "\\\\[Editor\\\\] Fix pick (translate, rotate, scale) objects which are far way from origin — Please have a read at the issue I created: \\[Issue\\](https://github.com/o3de/o3de/issues/19600).",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -6933,7 +6933,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "heuristic_title",
-      "description": "Manually migrated missing nodes to modern equivalents.",
+      "description": "Fixed MotionMatching ScriptCanvas demo files — Manually migrated missing nodes to modern equivalents.",
       "flags": [
         "stabilization-sync"
       ],
@@ -6995,7 +6995,7 @@
       ],
       "sig_category": "sig/build",
       "categorization_source": "label",
-      "description": "* Isolates the variables in the \"Fetch\" for 3rd Party GoogleTest in a function to prevent scope leakage * Sets the BUILD_SHARED_LIBS to OFF for this package, like we do for all the others.",
+      "description": "Update GoogleTest to always build static.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -7037,7 +7037,7 @@
       ],
       "sig_category": "uncategorized",
       "categorization_source": "uncategorized",
-      "description": "Close https://github.com/o3de/o3de/issues/19623 by patching Assimp. I wasn't able to repro the issue on clang 18, 20 and 22, but since two users ran into it while building it must be tackled.",
+      "description": "Add patch file for assimp to fix tinyusd missing includes — Close https://github.com/o3de/o3de/issues/19623 by patching Assimp. I wasn't able to repro the issue on clang 18, 20 and 22, but since two users ran into it while building it must be tackled.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -7083,7 +7083,7 @@
       ],
       "sig_category": "sig/content",
       "categorization_source": "label",
-      "description": "Close https://github.com/o3de/o3de/issues/19612. Not yet sure on what caused the regression (will have a quick look at the history), likely something in CommandLine::GetNumMiscValues(), but either way its still important to have this safe-guard.",
+      "description": "Prevent annoying dialog upon opening material editor — Close https://github.com/o3de/o3de/issues/19612. Not yet sure on what caused the regression (will have a quick look at the history), likely something in CommandLine::GetNumMiscValues(), but either way its still important to have this safe-guard.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -7113,7 +7113,7 @@
       ],
       "sig_category": "sig/graphics-audio",
       "categorization_source": "label",
-      "description": "Adds missing material features: - Cutout opacity mode - Blended opacity mode - Double-sided rendering - optional Cast Shadows - optional Billboard.",
+      "description": "Extend Unlit material support.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -7341,7 +7341,7 @@
       ],
       "sig_category": "sig/network",
       "categorization_source": "label",
-      "description": "The \\`NetworkInput::Serialize\\` method deserializes \\`componentInputCount\\` directly from network packets without validating it against the expected component count. A malicious client can send a very large \\`componentInputCount\\` value causing the server to allocate excessive memory, leading to out-of...",
+      "description": "Security: Add bounds check on componentInputCount to prevent OOM DoS.",
       "flags": [
         "stabilization-sync"
       ],
@@ -7364,7 +7364,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "heuristic_files",
-      "description": "<img width=\"1107\" height=\"363\" alt=\"image\" src=\"https://github.com/user-attachments/assets/c684b047-835a-4198-8893-ef92e8c7c49d\" />.",
+      "description": "Registered \"Group\" now enables nested \\[new\\] menu generation, as well as enabling slash separation of groups \"GenomeStudios/Feature\" to enable deeper nesting.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -7896,7 +7896,7 @@
       ],
       "sig_category": "sig/core",
       "categorization_source": "heuristic_title",
-      "description": "Cherry-pick changes from the \\`main\\` branch after 2510.1 release back to \\`development\\`: * Cherry-pick repo.json from backports * Bump Gem versions: ROS2, SimulationInterfaces, WarehouseAssets * Bump Gem versions: ROS2Controllers, ROS2Sensors * Update release date.",
+      "description": "2510.1 point release: update versions of gems; update repo.json.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -8267,7 +8267,7 @@
       ],
       "sig_category": "sig/simulation",
       "categorization_source": "label",
-      "description": "As noticed in #1039 , invalid rotation value was resulting in undefined behavior (e.g. increasing object's scale). A proper handling of invalid rotation and invalid translation was added in this PR.",
+      "description": "\\\\[Simulation Interfaces\\\\] Add support for INVALID_POSE — As noticed in #1039 , invalid rotation value was resulting in undefined behavior (e.g. increasing object's scale). A proper handling of invalid rotation and invalid translation was added in this PR.",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null
@@ -8289,7 +8289,7 @@
       ],
       "sig_category": "sig/simulation",
       "categorization_source": "heuristic_files",
-      "description": "This PR fixes the build with the \\`development\\` branch of the engine: - adopt \\`AZStd::move\\` changes from the engine: https://github.com/o3de/o3de/pull/19585 - adopt \\`AZStd::span\\` changes from the engine: https://github.com/o3de/o3de/pull/19581.",
+      "description": "Fix development (and tests).",
       "flags": [],
       "manual_override_sig": null,
       "manual_override_description": null

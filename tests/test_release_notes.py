@@ -723,14 +723,36 @@ class TestBuildPrDescription:
         result = release_notes._build_pr_description('Fix rendering bug in Atom', body)
         assert result == 'Fix rendering bug in Atom.'
 
-    def test_body_truncated_if_long(self):
+    def test_body_too_long_uses_title(self):
         body = 'A' * 500
         result = release_notes._build_pr_description('Long PR', body)
-        assert len(result) <= 305
+        assert result == 'Long PR.'
 
     def test_empty_body_and_title(self):
         result = release_notes._build_pr_description('', '')
         assert result == ''
+
+    def test_bullet_list_body_uses_title(self):
+        body = '- Fixed widget A\n- Updated component B\n- Removed legacy C'
+        result = release_notes._build_pr_description('Editor improvements', body)
+        assert result == 'Editor improvements.'
+
+    def test_image_in_body_skipped(self):
+        body = '![screenshot](http://example.com/img.png)\n\nThis fixes the layout.'
+        result = release_notes._build_pr_description('Fix layout', body)
+        assert 'layout' in result.lower()
+        assert '![' not in result
+
+    def test_unrelated_body_combines_with_title(self):
+        body = 'The previous implementation had a race condition in the event loop.'
+        result = release_notes._build_pr_description('Fix crash on startup', body)
+        assert 'crash on startup' in result.lower()
+        assert 'race condition' in result.lower()
+
+    def test_related_body_replaces_title(self):
+        body = 'Fix the crash on startup caused by a null pointer in the initialization code.'
+        result = release_notes._build_pr_description('Fix crash on startup', body)
+        assert 'null pointer' in result.lower()
 
 
 class TestExtractFirstParagraph:
@@ -755,6 +777,14 @@ class TestExtractFirstParagraph:
     def test_all_noise(self):
         body = '## What\n- [x] Done\n---\n'
         assert release_notes._extract_first_paragraph(body) == ''
+
+    def test_bullet_list_returns_empty(self):
+        body = '- Item one\n- Item two\n- Item three'
+        assert release_notes._extract_first_paragraph(body) == ''
+
+    def test_skips_images(self):
+        body = '![alt text](http://img.png)\n<img src="foo.png">\n\nReal content here.'
+        assert release_notes._extract_first_paragraph(body) == 'Real content here.'
 
 
 class TestRos2Categorization:

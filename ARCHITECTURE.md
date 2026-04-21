@@ -57,7 +57,7 @@ Generates a CycloneDX 1.5 JSON SBOM (`sbom.cdx.json`). Captures project metadata
 
 ### `tests/test_release_notes.py`
 
-143 unit tests using `pytest` and `unittest.mock`. Covers input validation (including injection attempts), multi-repo path parsing, SIG categorization (labels, title heuristics, file heuristics, priority ordering), summary prompt building, summary generation (success, failure, timeout), markdown rendering (with and without summary), incremental merging with manual override preservation, atomic file I/O, and JSON loading/validation.
+149 unit tests using `pytest` and `unittest.mock`. Covers input validation (including injection attempts), multi-repo path parsing, SIG categorization (labels, title heuristics, file heuristics, priority ordering), summary prompt building, summary generation (success, failure, timeout), markdown rendering (with and without summary), incremental merging with manual override preservation, atomic file I/O, and JSON loading/validation.
 
 ### `.github/workflows/sbom.yml`
 
