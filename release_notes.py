@@ -17,6 +17,8 @@ from datetime import datetime, timezone
 LOG_FORMAT = '[%(levelname)s] %(name)s: %(message)s'
 logger = logging.getLogger('o3de.release_notes')
 
+__version__ = '0.1.0-beta'
+
 SCHEMA_VERSION = 1
 
 GIT_REF_PATTERN = re.compile(r'^[a-zA-Z0-9._/\-]+$')
@@ -688,7 +690,7 @@ def _run_render(args: argparse.Namespace) -> int:
 
     content = render_markdown(
         data['pull_requests'],
-        args.version,
+        args.release_version,
         include_uncategorized=args.include_uncategorized,
     )
 
@@ -730,7 +732,8 @@ def add_parser_args(parser: argparse.ArgumentParser) -> None:
     render_parser = subparsers.add_parser('render', help='Render markdown from JSON')
     render_parser.add_argument('--input-json', required=True, help='Input JSON file path')
     render_parser.add_argument('--output-md', required=True, help='Output markdown file path')
-    render_parser.add_argument('--version', required=True, help='Version string (e.g. 26.05.0)')
+    render_parser.add_argument('--release-version', required=True, dest='release_version',
+                               help='Release version string (e.g. 26.05.0)')
     render_parser.add_argument('--include-uncategorized', action='store_true',
                                help='Include uncategorized PRs in output')
     _add_common_args(render_parser)
@@ -744,7 +747,8 @@ def add_parser_args(parser: argparse.ArgumentParser) -> None:
     gen_parser.add_argument('--repo-path', default='.', help='Path to local git clone (default: current directory)')
     gen_parser.add_argument('--output-json', required=True, help='Output JSON file path')
     gen_parser.add_argument('--output-md', required=True, help='Output markdown file path')
-    gen_parser.add_argument('--version', required=True, help='Version string (e.g. 26.05.0)')
+    gen_parser.add_argument('--release-version', required=True, dest='release_version',
+                            help='Release version string (e.g. 26.05.0)')
     gen_parser.add_argument('--include-uncategorized', action='store_true',
                             help='Include uncategorized PRs in output')
     _add_common_args(gen_parser)
@@ -756,6 +760,7 @@ def main() -> int:
         prog='release_notes',
         description='Generate O3DE release notes from merged pull requests',
     )
+    parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     add_parser_args(parser)
     args = parser.parse_args()
 

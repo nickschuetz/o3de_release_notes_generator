@@ -20,7 +20,7 @@ python release_notes.py generate \
   --repo-path /path/to/o3de \
   --output-json release_data.json \
   --output-md 26050_release_notes.md \
-  --version 26.05.0
+  --release-version 26.05.0
 ```
 
 ## Project Structure
@@ -74,7 +74,7 @@ python release_notes.py fetch \
 python release_notes.py render \
   --input-json <input.json> \
   --output-md <output.md> \
-  --version <version-string> \
+  --release-version <version-string> \
   [--include-uncategorized]
 ```
 
@@ -82,7 +82,7 @@ python release_notes.py render \
 |------|----------|---------|-------------|
 | `--input-json` | Yes | - | Path to JSON from `fetch` |
 | `--output-md` | Yes | - | Output markdown file path |
-| `--version` | Yes | - | Version string (e.g., `26.05.0`) |
+| `--release-version` | Yes | - | Release version string (e.g., `26.05.0`) |
 | `--include-uncategorized` | No | - | Show PRs that couldn't be categorized |
 
 ### `generate` - Fetch and render in one step
@@ -100,7 +100,7 @@ python release_notes.py generate \
   --repo-path ~/PROJECTS/o3de \
   --output-json release_data.json \
   --output-md 26050_release_notes.md \
-  --version 26.05.0
+  --release-version 26.05.0
 ```
 
 ### Incremental update during pre-release
@@ -111,12 +111,12 @@ Re-run the same command. New PRs are fetched; existing data and any manual edits
 # Week 1
 python release_notes.py generate --from-ref 2510.0 --to-ref development \
   --repo-path ~/PROJECTS/o3de --output-json release_data.json \
-  --output-md notes.md --version 26.05.0
+  --output-md notes.md --release-version 26.05.0
 
 # Week 2 (same command - only fetches new PRs)
 python release_notes.py generate --from-ref 2510.0 --to-ref development \
   --repo-path ~/PROJECTS/o3de --output-json release_data.json \
-  --output-md notes.md --version 26.05.0
+  --output-md notes.md --release-version 26.05.0
 ```
 
 ### Fetch only (for AI agent consumption)
@@ -139,7 +139,7 @@ python release_notes.py generate \
   --repo-path ~/PROJECTS/o3de \
   --output-json release_data.json \
   --output-md notes.md \
-  --version 26.05.0
+  --release-version 26.05.0
 ```
 
 ### Include uncategorized PRs for triage
@@ -150,7 +150,7 @@ python release_notes.py generate \
   --repo-path ~/PROJECTS/o3de \
   --output-json release_data.json \
   --output-md notes.md \
-  --version 26.05.0 \
+  --release-version 26.05.0 \
   --include-uncategorized
 ```
 
