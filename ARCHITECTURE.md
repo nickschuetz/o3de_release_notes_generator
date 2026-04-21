@@ -40,7 +40,7 @@ Both scripts use only Python stdlib modules and interact with external systems (
 
 ### `release_notes.py`
 
-The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 1100 lines.
+The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 1190 lines.
 
 **Key data structures:**
 - `SIG_TITLE_KEYWORDS` - Dict mapping SIG names to title keyword lists for heuristic categorization.
@@ -86,11 +86,11 @@ GitHub Action that regenerates `sbom.cdx.json` on every push to `main` that chan
 **Process:**
 1. For each repo, constructs GraphQL queries batching up to 30 PRs per request (~8 requests for a typical release of ~230 PRs). Queries fetch title, body, labels, files, author, and merge date.
 2. Executes via `gh api graphql` (subprocess with list args). Each repo's PRs are fetched from the correct GitHub owner/repo.
-3. PR descriptions are built from the PR body's first meaningful paragraph (skipping template headers, checklists, URLs, and noise). Falls back to the title if the body is empty or too short.
+3. PR descriptions are built from the PR body's first meaningful paragraph (20-300 chars; skipping template headers, checklists, URLs, images, `<img>` tags, and bullet lists). When the paragraph shares less than 20% word overlap with the title, both are combined with an em dash for standalone readability. Falls back to the sanitized title if the body is empty, too short, too long, or entirely noise.
 3. For each PR, categorizes by SIG using three methods in priority order:
    - **Label match:** Checks for `sig/*` GitHub labels. Highest confidence.
    - **Title heuristic:** Matches title keywords against per-SIG keyword maps.
-   - **File path heuristic:** Matches changed file paths against directory-to-SIG maps.
+   - **File path heuristic:** Matches changed file paths against directory-to-SIG maps (derived from `.github/CODEOWNERS`). Uses longest-match-wins: for overlapping patterns (e.g., `AzCore/AzCore/Math/` vs `AzCore/`), the most specific match determines the SIG.
 4. Detects flags (cherry-pick, stabilization-sync) for filtering.
 5. Merges with any existing JSON data, preserving manual overrides.
 
@@ -163,6 +163,7 @@ The `generate_sbom.py` script produces a CycloneDX 1.5 JSON SBOM at `sbom.cdx.js
 |-------|--------|------------|
 | GitHub auth token | Exposure in logs or code | Delegated to `gh` CLI credential store; never handled directly |
 | PR titles (untrusted) | Markdown injection in rendered output | Sanitized: `#`, `[`, `]`, `` ` ``, `\|` escaped; trailing PR refs stripped |
+| PR bodies (untrusted) | Markdown/HTML injection via body extraction | First paragraph only (20-300 chars); images, `<img>` tags, bullet lists, and template noise filtered; combined with title only when word overlap <20%; sanitized before rendering |
 | Git refs (user input) | Command injection via subprocess | Validated against `^[a-zA-Z0-9._/-]+$`; must not start with `-` |
 | Repo slugs (user input) | Command injection | Validated against `^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$` |
 | Output file paths | Path traversal | Resolved via `pathlib.Path.resolve()`; optional base-dir containment check |
@@ -205,6 +206,7 @@ The `generate_sbom.py` script produces a CycloneDX 1.5 JSON SBOM at `sbom.cdx.js
 | Output path | N/A (uses pathlib) | OS limit | Parent must exist; optional base-dir containment |
 | Version string | Free text (user-facing) | N/A | Used only in markdown heading |
 | PR number | Parsed as `int()` | 999999 | Must be 1-999999; validated before GraphQL query construction |
+| Summary hint | Free text or `@filepath` | N/A | If prefixed with `@`, reads from file; file must exist and be readable; returns empty on failure |
 | Summary command | Parsed via `shlex.split()` | N/A | Executable checked via `shutil.which()` before invocation |
 
 ### Subprocess Execution

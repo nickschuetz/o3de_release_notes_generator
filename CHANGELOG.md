@@ -17,8 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consistent error message truncation via `_safe_stderr()` (200 char max)
 - `shlex.split()` for safe summary command parsing (supports quoted arguments)
 - `reports/` directory with example output from a full multi-repo run
-- `_clean_summary()` function to strip LLM preamble text and `---` dividers
-- 3 new tests for summary hint, plus tests for PR validation, ANSI stripping, edge cases
+- PR descriptions now built from PR body's first meaningful paragraph (filters bullet lists, images, template noise; combines with title when body lacks context)
+- SIG file path patterns rebuilt from `.github/CODEOWNERS` with longest-match-wins logic
+- ROS2/SimulationInterfaces file paths and keywords mapped to sig/simulation
+- LLM postamble stripping (self-explanatory paragraphs from chatty LLMs)
+- 62 new tests (149 total) for PR validation, description building, body extraction, hint resolution, ANSI stripping, ROS2 categorization, and edge cases
 
 ### Changed
 - PR references now render as clickable markdown links (e.g., `[o3de#19709](https://github.com/o3de/o3de/pull/19709)`)
