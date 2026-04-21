@@ -40,7 +40,7 @@ Both scripts use only Python stdlib modules and interact with external systems (
 
 ### `release_notes.py`
 
-The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 960 lines.
+The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 990 lines.
 
 **Key data structures:**
 - `SIG_TITLE_KEYWORDS` - Dict mapping SIG names to title keyword lists for heuristic categorization.
@@ -49,7 +49,7 @@ The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `
 
 **Multi-repo support:** The `parse_repo_path_mappings()` function resolves per-repo local clone paths. Each repo can have its own clone via `--repo-path owner/repo=/path`, with `--default-repo-path` as the fallback.
 
-**Summary generation:** The `generate_summary()` function builds a structured prompt from categorized PR data and passes it via stdin to a configurable LLM command (default: `ollama run --nowordwrap qwen2.5:32b`) via subprocess (list args, no `shell=True`). Enabled via `--generate-summary`; disabled by default.
+**Summary generation:** The `generate_summary()` function builds a structured prompt from categorized PR data and passes it via stdin to a configurable LLM command via subprocess (list args, no `shell=True`). Default: `ollama run --nowordwrap qwen2.5:32b` (local); also supports `claude -p` (cloud). The `_clean_summary()` function strips LLM preamble text and dividers from the output. Command is parsed via `shlex.split()`. Enabled via `--generate-summary`; disabled by default.
 
 ### `generate_sbom.py`
 
@@ -57,7 +57,7 @@ Generates a CycloneDX 1.5 JSON SBOM (`sbom.cdx.json`). Captures project metadata
 
 ### `tests/test_release_notes.py`
 
-119 unit tests using `pytest` and `unittest.mock`. Covers input validation (including injection attempts), multi-repo path parsing, SIG categorization (labels, title heuristics, file heuristics, priority ordering), summary prompt building, summary generation (success, failure, timeout), markdown rendering (with and without summary), incremental merging with manual override preservation, atomic file I/O, and JSON loading/validation.
+120 unit tests using `pytest` and `unittest.mock`. Covers input validation (including injection attempts), multi-repo path parsing, SIG categorization (labels, title heuristics, file heuristics, priority ordering), summary prompt building, summary generation (success, failure, timeout), markdown rendering (with and without summary), incremental merging with manual override preservation, atomic file I/O, and JSON loading/validation.
 
 ### `.github/workflows/sbom.yml`
 
@@ -102,7 +102,7 @@ GitHub Action that regenerates `sbom.cdx.json` on every push to `main` that chan
 **Input:** JSON data from Stage 2, version string, optional summary generation config.
 
 **Process:**
-1. If `--generate-summary` is enabled, builds a structured prompt from the PR data and passes it via stdin to the configured LLM command (default: `ollama run --nowordwrap qwen2.5:32b`) via subprocess with list args.
+1. If `--generate-summary` is enabled, builds a structured prompt from the PR data and passes it via stdin to the configured LLM command (default: `ollama run --nowordwrap qwen2.5:32b`; or `claude -p` for cloud) via subprocess with list args. LLM preamble text and dividers are stripped from the output.
 2. Groups PRs by SIG category.
 3. Filters out cherry-picks and stabilization sync PRs.
 4. Renders markdown with fixed SIG ordering matching the established O3DE release notes format.
@@ -202,9 +202,9 @@ The `generate_sbom.py` script produces a CycloneDX 1.5 JSON SBOM at `sbom.cdx.js
 | Repo slug | `^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$` | 128 | Exactly one `/` |
 | Repo path mapping | `^(owner/repo)=(.+)$` | N/A | Repo slug validated separately; path resolved via `pathlib`; `.git` existence checked |
 | Output path | N/A (uses pathlib) | OS limit | Parent must exist; optional base-dir containment |
-| PR number | Parsed as `int()` | N/A | Must be positive integer (implicit) |
 | Version string | Free text (user-facing) | N/A | Used only in markdown heading |
-| Summary command | Split by whitespace | N/A | Executable checked via `shutil.which()` before invocation |
+| PR number | Parsed as `int()` | 999999 | Must be 1-999999; validated before GraphQL query construction |
+| Summary command | Parsed via `shlex.split()` | N/A | Executable checked via `shutil.which()` before invocation |
 
 ### Subprocess Execution
 

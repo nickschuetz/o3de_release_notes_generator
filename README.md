@@ -9,7 +9,7 @@ Designed to be run incrementally throughout the pre-release cycle so the release
 - Python 3.10+
 - [GitHub CLI (`gh`)](https://cli.github.com/) installed and authenticated (`gh auth login`)
 - Local clone(s) of O3DE repositories (read-only reference)
-- (Optional) [Ollama](https://ollama.com/) with a local model for automated narrative summary generation
+- (Optional) An LLM for automated narrative summary generation — [Ollama](https://ollama.com/) (local, open-source) or [Claude CLI](https://claude.ai/claude-code) (cloud)
 
 ## Quick Start
 
@@ -36,7 +36,7 @@ o3de_release_notes_generator/
 ├── generate_sbom.py                # CycloneDX 1.5 SBOM generator
 ├── sbom.cdx.json                   # Generated SBOM (auto-updated via CI)
 ├── tests/
-│   └── test_release_notes.py       # 119 unit tests
+│   └── test_release_notes.py       # 120 unit tests
 ├── reports/                        # Generated release notes output
 ├── .github/
 │   └── workflows/
@@ -161,7 +161,10 @@ This builds a structured prompt from the categorized PR data and pipes it via st
 To use a different model or tool:
 
 ```bash
-# Lighter model for machines with less VRAM
+# Claude CLI (cloud, highest quality)
+--generate-summary --summary-cmd "claude -p"
+
+# Lighter local model for machines with less VRAM
 --generate-summary --summary-cmd "ollama run --nowordwrap qwen2.5:14b"
 
 # Or any tool that reads a prompt from stdin and writes to stdout
@@ -272,12 +275,16 @@ When `--generate-summary` is enabled, the tool builds a structured prompt from t
 
 **Default command:** `ollama run --nowordwrap qwen2.5:32b` ([Ollama](https://ollama.com/) with Qwen 2.5 32B). Override with `--summary-cmd`.
 
-**Recommended open-source models (via [Ollama](https://ollama.com/)):**
-- `qwen2.5:32b` — best quality, needs ~24GB VRAM (default)
-- `qwen2.5:14b` — good quality, needs ~12GB VRAM
-- `mistral` — lightweight alternative, needs ~6GB VRAM
+**Supported LLM options:**
 
-**Requirements for custom commands:** Must read the prompt from stdin and write the response to stdout.
+| Command | Type | Quality | Requirements |
+|---------|------|---------|--------------|
+| `claude -p` | Cloud | Highest | [Claude CLI](https://claude.ai/claude-code) authenticated |
+| `ollama run --nowordwrap qwen2.5:32b` | Local | High | [Ollama](https://ollama.com/), ~24GB VRAM (default) |
+| `ollama run --nowordwrap qwen2.5:14b` | Local | Good | [Ollama](https://ollama.com/), ~12GB VRAM |
+| `ollama run --nowordwrap mistral` | Local | Good | [Ollama](https://ollama.com/), ~6GB VRAM |
+
+**Requirements for custom commands:** Must read the prompt from stdin and write the response to stdout. LLM preamble text (e.g., "Here's the summary:") and `---` dividers are automatically stripped from the output.
 
 **When disabled (default):** A placeholder intro and `<!-- TODO -->` comment are inserted for manual writing.
 
@@ -303,7 +310,7 @@ The SBOM captures:
 python -m pytest tests/ -v
 ```
 
-119 unit tests covering input validation, multi-repo path parsing, SIG categorization, summary prompt building, summary generation, markdown rendering, incremental merging, atomic I/O, and security controls.
+120 unit tests covering input validation, multi-repo path parsing, SIG categorization, summary prompt building, summary generation, markdown rendering, incremental merging, atomic I/O, and security controls.
 
 ## Security
 
