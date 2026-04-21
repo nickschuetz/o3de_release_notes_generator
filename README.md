@@ -31,7 +31,7 @@ o3de_release_notes_generator/
 ├── README.md                       # This file
 ├── ARCHITECTURE.md                 # Architecture, security model, data flow
 ├── CHANGELOG.md                    # Version history (Keep a Changelog format)
-├── CLAUDE.md                       # AI agent instructions for this repo
+├── AGENTS.md                       # AI agent instructions for this repo
 ├── release_notes.py                # Main script (zero external dependencies)
 ├── generate_sbom.py                # CycloneDX 1.5 SBOM generator
 ├── sbom.cdx.json                   # Generated SBOM (auto-updated via CI)
