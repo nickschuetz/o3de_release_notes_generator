@@ -1,8 +1,10 @@
 # 26.05.0 Release Notes
 
-The O3DE 26.05.0 release includes bug fixes, performance enhancements, and new features across the engine.
+The O3DE 26.05.0 release delivers 202 changes across seven Special Interest Groups, bringing substantial platform expansion, graphics modernization, and developer workflow improvements to the engine. This release reflects the continued growth of O3DE as a truly cross-platform, open-source 3D engine, with contributions spanning new platform targets, advanced rendering capabilities, and significant quality-of-life enhancements for content creators and engine developers alike.
 
-<!-- TODO: Write a narrative summary of the release highlights -->
+Among the most notable additions, Alternate Frame Rendering introduces multi-GPU rendering capability to Atom, while basic support for Cluster-Level Acceleration Structures (CLAS) in Vulkan advances the engine's ray tracing pipeline. The new OpenParticleSystem gem arrives as a modern replacement for the now-removed legacy particle system, and the platform reach grows significantly with initial Emscripten configuration for web targets, preliminary Mac ARM64 support, and Wayland display server support on Linux. On the content side, a new Component Creation GUI integrated directly into the O3DE Editor streamlines the process of building custom components, and the LOD importer gains the ability to automatically generate missing levels of detail. The decoupling of AssImp from the Scene API improves modularity, while streamer throughput optimizations and unified fast math across all platforms deliver measurable performance and consistency gains. Several legacy CryEngine APIs — including Cry_Matrix44, Cry_Quat, CRY_ASSERT, and Cry_Color — have entered formal deprecation alongside PhysX 4, continuing the engine's steady migration toward modern, maintainable foundations.
+
+The O3DE community continues to drive the engine forward through contributions in simulation, networking, and build infrastructure. Robotics workflows see improvements across ROS 2 controllers, sensors, and the robot importer, while editor usability benefits from fixes to the inspector, camera controls, and project manager. Build infrastructure gains automated review workflows for iOS and Mac, an updated CMake toolchain, and a unified compiler launcher. The O3DE project thanks all contributors who submitted pull requests, reviewed code, and participated in SIG discussions to make this release possible.
 
 # Full list of changes
 

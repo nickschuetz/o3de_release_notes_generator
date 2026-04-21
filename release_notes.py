@@ -578,6 +578,33 @@ def _strip_ansi(text: str) -> str:
     return ANSI_ESCAPE_PATTERN.sub('', text)
 
 
+SUMMARY_PREAMBLE_PATTERNS = [
+    re.compile(r'^(here\'?s?|below is|the following is).*summary.*:?\s*$', re.IGNORECASE),
+    re.compile(r'^(sure|certainly|of course)[,!.].*', re.IGNORECASE),
+]
+
+
+def _clean_summary(text: str) -> str:
+    lines = text.split('\n')
+    cleaned = True
+    while cleaned:
+        cleaned = False
+        while lines and lines[0].strip() in ('---', ''):
+            lines.pop(0)
+            cleaned = True
+        while lines and lines[-1].strip() in ('---', ''):
+            lines.pop()
+            cleaned = True
+        while lines:
+            first = lines[0].strip()
+            if any(p.match(first) for p in SUMMARY_PREAMBLE_PATTERNS):
+                lines.pop(0)
+                cleaned = True
+                continue
+            break
+    return '\n'.join(lines).strip()
+
+
 def generate_summary(pr_list: list[dict], version: str, summary_cmd: str) -> str | None:
     prompt = _build_summary_prompt(pr_list, version)
 
@@ -616,6 +643,7 @@ def generate_summary(pr_list: list[dict], version: str, summary_cmd: str) -> str
             logger.warning('Summary command returned empty output')
             return None
 
+        summary = _clean_summary(summary)
         return summary
 
     except subprocess.TimeoutExpired:
