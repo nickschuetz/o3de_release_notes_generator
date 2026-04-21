@@ -307,14 +307,21 @@ class TestSanitizePrTitle:
 
 
 class TestFormatPrReference:
-    def test_main_repo(self):
-        assert release_notes._format_pr_reference('o3de/o3de', 19709) == '[o3de#19709]'
+    def test_with_url(self):
+        result = release_notes._format_pr_reference('o3de/o3de', 19709, 'https://github.com/o3de/o3de/pull/19709')
+        assert result == '[o3de#19709](https://github.com/o3de/o3de/pull/19709)'
+
+    def test_without_url_constructs_link(self):
+        result = release_notes._format_pr_reference('o3de/o3de', 19709)
+        assert result == '[o3de#19709](https://github.com/o3de/o3de/pull/19709)'
 
     def test_extras_repo(self):
-        assert release_notes._format_pr_reference('o3de/o3de-extras', 1045) == '[o3de-extras#1045]'
+        result = release_notes._format_pr_reference('o3de/o3de-extras', 1045, 'https://github.com/o3de/o3de-extras/pull/1045')
+        assert result == '[o3de-extras#1045](https://github.com/o3de/o3de-extras/pull/1045)'
 
-    def test_fork(self):
-        assert release_notes._format_pr_reference('nickschuetz/o3de', 19709) == '[o3de#19709]'
+    def test_fork_without_url(self):
+        result = release_notes._format_pr_reference('nickschuetz/o3de', 19709)
+        assert result == '[o3de#19709](https://github.com/nickschuetz/o3de/pull/19709)'
 
 
 class TestBuildGraphqlQuery:
@@ -353,7 +360,7 @@ class TestRenderMarkdown:
         result = release_notes.render_markdown(prs, '26.05.0')
         assert '# 26.05.0 Release Notes' in result
         assert '## SIG-Build' in result
-        assert '[o3de#1]' in result
+        assert '[o3de#1](' in result
 
     def test_sig_ordering(self):
         prs = [
@@ -371,8 +378,8 @@ class TestRenderMarkdown:
             self._make_pr(2, 'sig/build', 'Cherry pick fix', flags=['cherry-pick']),
         ]
         result = release_notes.render_markdown(prs, '1.0')
-        assert '[o3de#1]' in result
-        assert '[o3de#2]' not in result
+        assert '[o3de#1](' in result
+        assert '[o3de#2](' not in result
 
     def test_uncategorized_hidden_by_default(self):
         prs = [self._make_pr(1, 'uncategorized')]

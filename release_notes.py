@@ -486,9 +486,12 @@ def _sanitize_pr_title_for_markdown(title: str) -> str:
     return result
 
 
-def _format_pr_reference(repo_slug: str, pr_number: int) -> str:
+def _format_pr_reference(repo_slug: str, pr_number: int, url: str = '') -> str:
     repo_name = repo_slug.split('/')[-1]
-    return f'[{repo_name}#{pr_number}]'
+    label = f'{repo_name}#{pr_number}'
+    if url:
+        return f'[{label}]({url})'
+    return f'[{label}](https://github.com/{repo_slug}/pull/{pr_number})'
 
 
 def merge_with_existing(
@@ -673,7 +676,7 @@ def render_markdown(
         prs.sort(key=lambda p: p.get('number', 0))
         for pr in prs:
             desc = pr.get('description', '') or _sanitize_pr_title_for_markdown(pr.get('title', ''))
-            ref = _format_pr_reference(pr.get('repo', ''), pr.get('number', 0))
+            ref = _format_pr_reference(pr.get('repo', ''), pr.get('number', 0), pr.get('url', ''))
             lines.append(f'- {desc} {ref}')
 
         lines.append('')
@@ -686,7 +689,7 @@ def render_markdown(
         uncategorized.sort(key=lambda p: p.get('number', 0))
         for pr in uncategorized:
             desc = _sanitize_pr_title_for_markdown(pr.get('title', ''))
-            ref = _format_pr_reference(pr.get('repo', ''), pr.get('number', 0))
+            ref = _format_pr_reference(pr.get('repo', ''), pr.get('number', 0), pr.get('url', ''))
             lines.append(f'- {desc} {ref}')
         lines.append('')
 
