@@ -40,7 +40,7 @@ Both scripts use only Python stdlib modules and interact with external systems (
 
 ### `release_notes.py`
 
-The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 870 lines.
+The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `argparse`. Approximately 920 lines.
 
 **Key data structures:**
 - `SIG_TITLE_KEYWORDS` - Dict mapping SIG names to title keyword lists for heuristic categorization.
@@ -53,7 +53,7 @@ The main script. Three subcommands (`fetch`, `render`, `generate`) exposed via `
 
 ### `generate_sbom.py`
 
-Generates a CycloneDX 1.5 JSON SBOM (`sbom.cdx.json`). Captures project metadata, Python stdlib module inventory, and SHA-256 hashes of all source files. Approximately 160 lines.
+Generates a CycloneDX 1.5 JSON SBOM (`sbom.cdx.json`). Captures project metadata, Python stdlib module inventory, and SHA-256 hashes of all source files. Approximately 190 lines.
 
 ### `tests/test_release_notes.py`
 

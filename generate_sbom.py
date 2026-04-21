@@ -23,7 +23,7 @@ import tempfile
 from datetime import datetime, timezone
 
 PROJECT_NAME = 'o3de_release_notes_generator'
-PROJECT_VERSION = '0.1.0-beta'
+PROJECT_VERSION = '0.2.0-beta'
 PROJECT_DESCRIPTION = 'Generates O3DE release notes from merged pull requests'
 PROJECT_LICENSE_ID = 'Apache-2.0 OR MIT'
 PROJECT_REPO = 'https://github.com/nickschuetz/o3de_release_notes_generator'
