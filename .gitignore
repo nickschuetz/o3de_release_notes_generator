@@ -1,3 +1,4 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -6,6 +7,23 @@ dist/
 build/
 .pytest_cache/
 
-# Generated output (keep templates, ignore generated data)
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated release notes output
+release_data.json
 *.generated.json
 *.generated.md
+26050_release_notes.md
+
+# General output patterns — catch ad-hoc runs
+*_release_notes.md
+*_release_data.json
